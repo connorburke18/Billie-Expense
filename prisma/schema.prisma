@@ -34,6 +34,7 @@ model Expense {
   categoryRef   Category? @relation(fields: [categoryId], references: [id])
   
   date          DateTime  @default(now())
+  time          String?
   
   receiptUrl    String?
   receiptText   String?
@@ -49,6 +50,17 @@ model Expense {
   
   @@index([userId, date])
   @@index([userId, category])
+}
+
+model PendingExpense {
+  id          String   @id @default(uuid())
+  userId      String
+  phoneNumber String
+  data        Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([phoneNumber])
 }
 
 model Category {
