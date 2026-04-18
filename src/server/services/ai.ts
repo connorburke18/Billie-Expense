@@ -14,6 +14,22 @@ interface ExpenseData {
   tags?: string[];
 }
 
+export async function generateMessage(prompt: string): Promise<string> {
+  if (!anthropic) return prompt;
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-3-5-haiku-20241022',
+      max_tokens: 256,
+      temperature: 0.7,
+      system: 'You are Billie, a casual but professional expense tracking assistant communicating via WhatsApp. Keep responses short, friendly, and conversational. No emojis. No markdown formatting.',
+      messages: [{ role: 'user', content: prompt }],
+    });
+    return message.content[0].type === 'text' ? message.content[0].text : prompt;
+  } catch {
+    return prompt;
+  }
+}
+
 export async function parseExpenseFromText(
   receiptText: string,
   userNote: string

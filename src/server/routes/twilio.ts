@@ -5,21 +5,20 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { processReceiptFile } from '../services/ocr';
-import { parseExpenseFromText } from '../services/ai';
+import { parseExpenseFromText, generateMessage } from '../services/ai';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 const upload = multer({ dest: 'uploads/' });
 
-function formatPendingSummary(data: any): string {
+function summaryContext(data: any): string {
   const date = data.date ? new Date(data.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today';
-  const time = data.time || new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  const amount = data.amount ? `$${parseFloat(data.amount).toFixed(2)}` : 'Unknown';
-  const vendor = data.merchant || 'Unknown vendor';
-  const expense = data.description || 'Expense';
-
-  return `Got it! Here's what I picked up:\n\n📅 Date: ${date}\n🕐 Time: ${time}\n💰 Expense: ${amount}\n🏪 Vendor: ${vendor}\n📝 Description: ${expense}\n\nLooks good? Reply *yes* to save it, or let me know what to fix (e.g. "vendor is Chipotle" or "amount is 12.50").`;
+  const time = data.time || '';
+  const amount = data.amount ? `$${parseFloat(data.amount).toFixed(2)}` : 'unknown amount';
+  const vendor = data.merchant || 'unknown vendor';
+  const description = data.description || '';
+  return `Date: ${date}${time ? ', Time: ' + time : ''}, Amount: ${amount}, Vendor: ${vendor}${description ? ', Description: ' + description : ''}`;
 }
 
 router.post('/webhook', upload.none(), async (req, res) => {
@@ -31,7 +30,7 @@ router.post('/webhook', upload.none(), async (req, res) => {
     console.log('🖼️ Media count:', NumMedia);
 
     const phoneNumber = From.replace('whatsapp:', '');
-    const reply = (msg: string) => {
+    const reply = async (msg: string) => {
       const twiml = new twilio.twiml.MessagingResponse();
       twiml.message(msg);
       res.type('text/xml');
@@ -40,53 +39,24 @@ router.post('/webhook', upload.none(), async (req, res) => {
 
     const user = await prisma.user.findUnique({ where: { phoneNumber } });
     if (!user) {
-      return reply('Hey! Welcome to Billie 👋 To get started, create your account at the web dashboard first, then come back here.');
+      const msg = await generateMessage('A new user texted Billie but has no account. Greet them warmly and tell them to sign up on the web dashboard first.');
+      return reply(msg);
     }
 
-    const bodyLower = (Body || '').trim().toLowerCase();
-
+    const bodyText = (Body || '').trim();
     const pending = await (prisma as any).pendingExpense.findUnique({ where: { phoneNumber } });
 
     if (pending) {
       const data = pending.data as any;
 
-      if (bodyLower === 'yes' || bodyLower === 'y' || bodyLower === 'looks good' || bodyLower === 'save') {
-        await (prisma as any).pendingExpense.delete({ where: { phoneNumber } });
-
-        const expense = await prisma.expense.create({
-          data: {
-            userId: user.id,
-            amount: parseFloat(data.amount),
-            currency: data.currency || 'USD',
-            description: data.description || 'Expense',
-            merchant: data.merchant,
-            category: data.category,
-            time: data.time,
-            date: data.date ? new Date(data.date) : new Date(),
-            receiptUrl: data.receiptUrl,
-            receiptText: data.receiptText,
-            notes: data.notes,
-            source: 'sms',
-            sourcePhone: From,
-            tags: data.tags || [],
-          },
-        });
-
-        console.log('💾 Expense saved:', expense.id);
-        return reply(`Perfect, logged! ✅ $${expense.amount.toFixed(2)} at ${expense.merchant || expense.description}. You can view it on your dashboard anytime.`);
-      }
-
-      if (bodyLower === 'no' || bodyLower === 'cancel' || bodyLower === 'discard') {
-        await (prisma as any).pendingExpense.delete({ where: { phoneNumber } });
-        return reply("No problem, tossed it out. Send me a new expense whenever you're ready!");
-      }
-
       const corrections: any = { ...data };
-      const amountMatch = Body.match(/amount\s+is\s+\$?(\d+\.?\d*)/i) || Body.match(/\$(\d+\.?\d*)/);
-      const vendorMatch = Body.match(/vendor\s+is\s+(.+)/i) || Body.match(/merchant\s+is\s+(.+)/i) || Body.match(/store\s+is\s+(.+)/i);
-      const dateMatch = Body.match(/date\s+is\s+(.+)/i);
-      const timeMatch = Body.match(/time\s+is\s+(.+)/i);
-      const descMatch = Body.match(/description\s+is\s+(.+)/i) || Body.match(/expense\s+is\s+(.+)/i);
+      const amountMatch = bodyText.match(/amount\s+is\s+\$?(\d+\.?\d*)/i) || bodyText.match(/\$(\d+\.?\d*)/);
+      const vendorMatch = bodyText.match(/vendor\s+is\s+(.+)/i) || bodyText.match(/merchant\s+is\s+(.+)/i) || bodyText.match(/store\s+is\s+(.+)/i);
+      const dateMatch = bodyText.match(/date\s+is\s+(.+)/i);
+      const timeMatch = bodyText.match(/time\s+is\s+(.+)/i);
+      const descMatch = bodyText.match(/description\s+is\s+(.+)/i) || bodyText.match(/expense\s+is\s+(.+)/i) || bodyText.match(/note\s+is\s+(.+)/i);
+
+      const anyCorrectionFound = amountMatch || vendorMatch || dateMatch || timeMatch || descMatch;
 
       if (amountMatch) corrections.amount = parseFloat(amountMatch[1]);
       if (vendorMatch) corrections.merchant = vendorMatch[1].trim();
@@ -94,12 +64,22 @@ router.post('/webhook', upload.none(), async (req, res) => {
       if (timeMatch) corrections.time = timeMatch[1].trim();
       if (descMatch) corrections.description = descMatch[1].trim();
 
-      await (prisma as any).pendingExpense.update({
-        where: { phoneNumber },
-        data: { data: corrections },
-      });
+      if (anyCorrectionFound) {
+        await (prisma as any).pendingExpense.update({
+          where: { phoneNumber },
+          data: { data: corrections },
+        });
 
-      return reply(`Updated! Here's the revised summary:\n\n${formatPendingSummary(corrections)}`);
+        const msg = await generateMessage(
+          `The user updated their pending expense. New details: ${summaryContext(corrections)}. Confirm the update casually and let them know it's been updated on their record. Tell them they can still make changes if needed.`
+        );
+        return reply(msg);
+      }
+
+      const msg = await generateMessage(
+        `The user sent a message that doesn't seem to be a correction. Their pending expense is: ${summaryContext(data)}. Respond naturally - maybe they're asking something or sending something unrelated. Keep it brief.`
+      );
+      return reply(msg);
     }
 
     let expenseData: any = {};
@@ -127,7 +107,7 @@ router.post('/webhook', upload.none(), async (req, res) => {
         receiptText = result.text;
         fs.unlinkSync(tempPath);
 
-        const aiParsed = await parseExpenseFromText(result.text, Body || '');
+        const aiParsed = await parseExpenseFromText(result.text, bodyText);
         expenseData = { ...expenseData, ...aiParsed };
         console.log('✅ OCR complete:', result.text.substring(0, 100));
       } catch (error) {
@@ -135,37 +115,56 @@ router.post('/webhook', upload.none(), async (req, res) => {
       }
     }
 
-    if (Body && Body.trim()) {
-      const textParsed = await parseExpenseFromText(Body, '');
+    if (bodyText) {
+      const textParsed = await parseExpenseFromText(bodyText, '');
       expenseData = { ...expenseData, ...textParsed };
     }
 
     if (!expenseData.amount) {
-      return reply("Hmm, I couldn't find an amount in there. Try something like \"$18.50 dinner at Olive Garden\" and I'll take care of the rest!");
+      const msg = await generateMessage("The user sent a message but Billie couldn't find an expense amount. Ask them to resend with the amount included, keeping it light and helpful.");
+      return reply(msg);
     }
 
     const now = new Date();
-    const pendingData = {
-      ...expenseData,
-      time: expenseData.time || now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-      date: expenseData.date || now.toISOString(),
-      receiptUrl,
-      receiptText,
-      notes: Body,
-    };
+    const expenseTime = expenseData.time || now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const expenseDate = expenseData.date || now.toISOString();
+
+    const expense = await prisma.expense.create({
+      data: {
+        userId: user.id,
+        amount: parseFloat(expenseData.amount),
+        currency: expenseData.currency || 'USD',
+        description: expenseData.description || bodyText || 'Expense',
+        merchant: expenseData.merchant,
+        category: expenseData.category,
+        time: expenseTime,
+        date: new Date(expenseDate),
+        receiptUrl,
+        receiptText,
+        notes: bodyText,
+        source: 'sms',
+        sourcePhone: From,
+        tags: expenseData.tags || [],
+      },
+    });
+
+    console.log('💾 Expense saved:', expense.id);
 
     await (prisma as any).pendingExpense.upsert({
       where: { phoneNumber },
-      create: { userId: user.id, phoneNumber, data: pendingData },
-      update: { data: pendingData },
+      create: { userId: user.id, phoneNumber, data: { ...expenseData, time: expenseTime, date: expenseDate, expenseId: expense.id } },
+      update: { data: { ...expenseData, time: expenseTime, date: expenseDate, expenseId: expense.id } },
     });
 
-    return reply(formatPendingSummary(pendingData));
+    const msg = await generateMessage(
+      `Billie just logged an expense for the user. Details: ${summaryContext({ ...expenseData, time: expenseTime, date: expenseDate })}. Tell them it's been saved. Let them know they can update the description or any detail if something's off, but don't ask them to confirm.`
+    );
+    return reply(msg);
 
   } catch (error) {
     console.error('Twilio webhook error:', error);
     const twiml = new twilio.twiml.MessagingResponse();
-    twiml.message('Oops, something went wrong on my end. Give it another shot!');
+    twiml.message('Something went wrong on my end. Try again in a moment.');
     res.type('text/xml');
     res.send(twiml.toString());
   }
