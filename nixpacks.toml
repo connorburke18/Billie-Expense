@@ -1,12 +1,5 @@
-# Force rebuild - v2
-[phases.setup]
-nixPkgs = ["nodejs", "npm"]
-
-[phases.install]
-cmds = ["npm ci"]
-
 [phases.build]
-cmds = ["npx prisma generate", "npm run build:server"]
+cmds = ["npm install", "npx prisma generate", "npm run build:server"]
 
 [start]
 cmd = "npm start"
