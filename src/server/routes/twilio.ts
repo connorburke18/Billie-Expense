@@ -4,7 +4,7 @@ import twilio from 'twilio';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { processReceipt } from '../services/ocr';
+import { processReceiptFile } from '../services/ocr';
 import { parseExpenseFromText } from '../services/ai';
 
 const router = express.Router();
@@ -43,10 +43,23 @@ router.post('/webhook', upload.none(), async (req, res) => {
       
       try {
         const imageUrl = MediaUrl0;
-        const result = await processReceipt(imageUrl);
-        
         receiptUrl = imageUrl;
+
+        const accountSid = process.env.TWILIO_ACCOUNT_SID!;
+        const authToken = process.env.TWILIO_AUTH_TOKEN!;
+        const authHeader = 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+
+        const imageResponse = await fetch(imageUrl, { headers: { Authorization: authHeader } });
+        if (!imageResponse.ok) throw new Error(`Failed to fetch image: ${imageResponse.status}`);
+        
+        const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+        const tempPath = path.join('/tmp', `receipt_${Date.now()}.jpg`);
+        fs.writeFileSync(tempPath, imageBuffer);
+
+        const result = await processReceiptFile(tempPath);
         receiptText = result.text;
+
+        fs.unlinkSync(tempPath);
         
         const aiParsed = await parseExpenseFromText(result.text, Body || '');
         expenseData = { ...expenseData, ...aiParsed };
