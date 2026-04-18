@@ -34,13 +34,18 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
+    let phoneNumber = data.phoneNumber?.trim();
+    if (phoneNumber && !phoneNumber.startsWith('+')) {
+      phoneNumber = '+1' + phoneNumber;
+    }
+
     const user = await prisma.user.create({
       data: {
         email: data.email,
         password: hashedPassword,
         firstName: data.firstName,
         lastName: data.lastName,
-        phoneNumber: data.phoneNumber,
+        phoneNumber,
       },
     });
 

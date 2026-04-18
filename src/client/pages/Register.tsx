@@ -9,7 +9,7 @@ export default function Register() {
     password: '',
     firstName: '',
     lastName: '',
-    phoneNumber: '',
+    phoneNumber: '+1',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,7 +22,9 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await register(formData);
+      let phone = formData.phoneNumber.trim();
+      if (phone && !phone.startsWith('+')) phone = '+1' + phone;
+      await register({ ...formData, phoneNumber: phone });
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Registration failed');
@@ -106,7 +108,7 @@ export default function Register() {
               value={formData.phoneNumber}
               onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="+1234567890"
+              placeholder="+11234567890"
             />
           </div>
 
