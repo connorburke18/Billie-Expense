@@ -18,7 +18,7 @@ export async function generateMessage(prompt: string): Promise<string> {
   if (!anthropic) return prompt;
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5',
       max_tokens: 256,
       temperature: 0.7,
       system: 'You are Billie, a casual but professional expense tracking assistant communicating via WhatsApp. Keep responses short, friendly, and conversational. No emojis. No markdown formatting.',
@@ -69,7 +69,7 @@ Extract and return a JSON object with these fields (only include fields you can 
 Return ONLY the JSON object, no other text.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5',
       max_tokens: 1024,
       temperature: 0.3,
       system: 'You are a helpful assistant that extracts expense information from receipts and notes. Always respond with valid JSON only.',
