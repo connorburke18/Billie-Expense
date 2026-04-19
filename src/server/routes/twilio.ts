@@ -78,6 +78,32 @@ router.post('/webhook', upload.none(), async (req, res) => {
     if (pending) {
       const data = pending.data as any;
 
+      if (data.awaitingVendor) {
+        const declineWords = ['no', 'nope', 'skip', 'nah', 'no thanks', "don't", 'dont'];
+        const isDecline = declineWords.some(w => bodyText.toLowerCase().includes(w));
+
+        if (isDecline) {
+          await (prisma as any).pendingExpense.update({
+            where: { phoneNumber },
+            data: { data: { ...data, awaitingVendor: false } },
+          });
+          return reply(await generateMessage('User declined to add a vendor. Acknowledge briefly.'));
+        }
+
+        const vendor = bodyText.trim();
+        if (data.expenseId) {
+          await prisma.expense.update({
+            where: { id: data.expenseId },
+            data: { merchant: vendor },
+          });
+        }
+        await (prisma as any).pendingExpense.update({
+          where: { phoneNumber },
+          data: { data: { ...data, merchant: vendor, awaitingVendor: false } },
+        });
+        return reply(await generateMessage(`User added vendor "${vendor}" to their expense. Confirm it's been saved.`));
+      }
+
       if (data.awaitingAmount) {
         const amountMatch = bodyText.match(/\$?(\d+\.?\d*)/);
         if (amountMatch) {
@@ -278,11 +304,17 @@ router.post('/webhook', upload.none(), async (req, res) => {
 
     console.log('💾 Expense saved:', expense.id);
 
-    await (prisma as any).pendingExpense.upsert({
-      where: { phoneNumber },
-      create: { userId: user.id, phoneNumber, data: { ...expenseData, time: expenseTime, date: expenseDate, expenseId: expense.id } },
-      update: { data: { ...expenseData, time: expenseTime, date: expenseDate, expenseId: expense.id } },
-    });
+    if (!expenseData.merchant) {
+      const msg = await generateMessage(
+        `Expense saved. ${summaryContext({ ...expenseData, time: expenseTime, date: expenseDate })}. No vendor was found - ask the user if they want to add one.`
+      );
+      await (prisma as any).pendingExpense.upsert({
+        where: { phoneNumber },
+        create: { userId: user.id, phoneNumber, data: { ...expenseData, time: expenseTime, date: expenseDate, expenseId: expense.id, awaitingVendor: true } },
+        update: { data: { ...expenseData, time: expenseTime, date: expenseDate, expenseId: expense.id, awaitingVendor: true } },
+      });
+      return reply(msg);
+    }
 
     const msg = await generateMessage(
       `Expense saved. ${summaryContext({ ...expenseData, time: expenseTime, date: expenseDate })}.`
