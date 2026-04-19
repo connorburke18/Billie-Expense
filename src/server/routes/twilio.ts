@@ -77,6 +77,17 @@ router.post('/webhook', upload.none(), async (req, res) => {
 
     if (pending) {
       const data = pending.data as any;
+      const history: { role: 'user' | 'assistant'; content: string }[] = data.history || [];
+
+      const replyWithHistory = async (prompt: string) => {
+        const msg = await generateMessage(prompt, history);
+        const newHistory = [...history, { role: 'user' as const, content: bodyText }, { role: 'assistant' as const, content: msg }].slice(-10);
+        await (prisma as any).pendingExpense.update({
+          where: { phoneNumber },
+          data: { data: { ...data, history: newHistory } },
+        });
+        return reply(msg);
+      };
 
       if (data.awaitingVendor) {
         const declineWords = ['no', 'nope', 'skip', 'nah', 'no thanks', "don't", 'dont'];
@@ -87,7 +98,7 @@ router.post('/webhook', upload.none(), async (req, res) => {
             where: { phoneNumber },
             data: { data: { ...data, awaitingVendor: false } },
           });
-          return reply(await generateMessage('User declined to add a vendor. Acknowledge briefly.'));
+          return replyWithHistory('User declined to add a vendor. Acknowledge briefly.');
         }
 
         const vendor = bodyText.trim();
@@ -101,7 +112,7 @@ router.post('/webhook', upload.none(), async (req, res) => {
           where: { phoneNumber },
           data: { data: { ...data, merchant: vendor, awaitingVendor: false } },
         });
-        return reply(await generateMessage(`User added vendor "${vendor}" to their expense. Confirm it's been saved.`));
+        return replyWithHistory(`User added vendor "${vendor}" to their expense. Confirm it's been saved.`);
       }
 
       if (data.awaitingAmount) {
@@ -133,11 +144,9 @@ router.post('/webhook', upload.none(), async (req, res) => {
             where: { phoneNumber },
             data: { data: { ...merged, expenseId: expense.id } },
           });
-          const msg = await generateMessage(`Expense logged from a receipt image. ${summaryContext({ ...merged })}.`);
-          return reply(msg);
+          return replyWithHistory(`Expense logged from a receipt image. ${summaryContext({ ...merged })}.`);
         }
-        const msg = await generateMessage('Still no amount found in their reply. Need just the total dollar amount to log this receipt.');
-        return reply(msg);
+        return replyWithHistory('Still no amount found in their reply. Need just the total dollar amount to log this receipt.');
       }
 
       const intent = await classifyMessage(bodyText, summaryContext(data));
@@ -177,10 +186,7 @@ router.post('/webhook', upload.none(), async (req, res) => {
         });
 
         const updated = data.expenseId ? await prisma.expense.findUnique({ where: { id: data.expenseId } }) : null;
-        const msg = await generateMessage(
-          `Expense updated. Current record: ${JSON.stringify(updated)}. User's correction was: "${bodyText}".`
-        );
-        return reply(msg);
+        return replyWithHistory(`Expense updated. Current record: ${JSON.stringify(updated)}. User's correction was: "${bodyText}".`);
       } else {
         const summaryKeywords = ['summary', 'list', 'show', 'expenses', 'how much', 'total', 'spent', 'history', 'what have i'];
         const wantsSummary = summaryKeywords.some(k => bodyText.toLowerCase().includes(k));
@@ -200,10 +206,12 @@ router.post('/webhook', upload.none(), async (req, res) => {
           `[${e.category || 'Uncategorized'}] ${e.merchant || e.description}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()}`
         ).join('\n');
 
-        const msg = await generateMessage(
-          `User said: "${bodyText}".\n\nTheir full expense history:\n${expensesContext}\n\nLast logged expense: ${summaryContext(data)}.`
-        );
-        return reply(msg);
+        return replyWithHistory(`User said: "${bodyText}".
+
+Their full expense history:
+${expensesContext}
+
+Last logged expense: ${summaryContext(data)}.`);
       }
     }
 

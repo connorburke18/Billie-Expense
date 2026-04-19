@@ -37,15 +37,18 @@ export async function classifyMessage(body: string, pendingContext: string): Pro
   }
 }
 
-export async function generateMessage(prompt: string): Promise<string> {
+export async function generateMessage(
+  prompt: string,
+  history: { role: 'user' | 'assistant'; content: string }[] = []
+): Promise<string> {
   if (!anthropic) return prompt;
   try {
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 256,
       temperature: 0.7,
-      system: 'You are Billie, a sharp and friendly expense tracking assistant on WhatsApp. You talk like a real person - direct, warm, never robotic. Never start with "Hey!" or greetings on every message. No emojis. No markdown. No bullet points. Keep it short. Do not end responses with a question unless you genuinely need information from the user to proceed.',
-      messages: [{ role: 'user', content: prompt }],
+      system: 'You are Billie, a sharp and friendly expense tracking assistant on WhatsApp. You talk like a real person - direct, warm, never robotic. Never start with "Hey!" or greetings on every message. No emojis. No markdown. No bullet points. Keep it short. Do not end responses with a question unless you genuinely need information from the user to proceed. Do not offer to help with tasks the user has not asked for.',
+      messages: [...history, { role: 'user', content: prompt }],
     });
     return message.content[0].type === 'text' ? message.content[0].text : prompt;
   } catch {
