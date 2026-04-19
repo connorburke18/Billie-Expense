@@ -44,7 +44,17 @@ router.post('/webhook', upload.none(), async (req, res) => {
     }
 
     const bodyText = (Body || '').trim();
-    const pending = await (prisma as any).pendingExpense.findUnique({ where: { phoneNumber } });
+    const hasNewImage = NumMedia && parseInt(NumMedia) > 0;
+
+    let pending = await (prisma as any).pendingExpense.findUnique({ where: { phoneNumber } });
+
+    if (pending) {
+      const ageMs = Date.now() - new Date(pending.updatedAt).getTime();
+      if (ageMs > 60 * 60 * 1000 || hasNewImage) {
+        await (prisma as any).pendingExpense.delete({ where: { phoneNumber } });
+        pending = null;
+      }
+    }
 
     if (pending) {
       const data = pending.data as any;
@@ -133,7 +143,7 @@ router.post('/webhook', upload.none(), async (req, res) => {
         return reply(msg);
       } else {
         const msg = await generateMessage(
-          `The user sent a message that seems unrelated to expense tracking. Respond briefly and naturally, but stay in character as Billie, an expense tracker.`
+          `The user said: "${bodyText}". Respond naturally and conversationally as Billie. If it's a question you can answer, answer it. Keep it short.`
         );
         return reply(msg);
       }
