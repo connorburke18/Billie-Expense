@@ -48,6 +48,43 @@ router.post('/webhook', upload.none(), async (req, res) => {
 
     if (pending) {
       const data = pending.data as any;
+
+      if (data.awaitingAmount) {
+        const amountMatch = bodyText.match(/\$?(\d+\.?\d*)/);
+        if (amountMatch) {
+          const updatedData = { ...data, amount: parseFloat(amountMatch[1]), awaitingAmount: false };
+          const aiParsed = await parseExpenseFromText(data.receiptText || '', bodyText);
+          const merged = { ...aiParsed, ...updatedData };
+
+          const now = new Date();
+          const expense = await prisma.expense.create({
+            data: {
+              userId: user.id,
+              amount: merged.amount,
+              currency: merged.currency || 'USD',
+              description: merged.description || 'Expense',
+              merchant: merged.merchant,
+              category: merged.category,
+              time: merged.time || now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+              date: merged.date ? new Date(merged.date) : now,
+              receiptUrl: merged.receiptUrl,
+              receiptText: merged.receiptText,
+              source: 'sms',
+              sourcePhone: From,
+              tags: merged.tags || [],
+            },
+          });
+          await (prisma as any).pendingExpense.update({
+            where: { phoneNumber },
+            data: { data: { ...merged, expenseId: expense.id } },
+          });
+          const msg = await generateMessage(`Billie just logged a receipt expense. Details: ${summaryContext({ ...merged })}. Tell them it's saved and they can update anything if needed.`);
+          return reply(msg);
+        }
+        const msg = await generateMessage("The user replied but Billie still couldn't find an amount. Ask once more for just the total.");
+        return reply(msg);
+      }
+
       const intent = await classifyMessage(bodyText, summaryContext(data));
 
       if (intent === 'new_expense') {
@@ -134,8 +171,19 @@ router.post('/webhook', upload.none(), async (req, res) => {
       expenseData = { ...expenseData, ...textParsed };
     }
 
+    const hasMedia = NumMedia && parseInt(NumMedia) > 0;
+
     if (!expenseData.amount) {
-      const msg = await generateMessage("The user sent a message but Billie couldn't find an expense amount. Ask them to resend with the amount included, keeping it light and helpful.");
+      if (hasMedia) {
+        const msg = await generateMessage(`The user sent a receipt image but the total amount couldn't be read clearly. Ask them to reply with the amount so you can log it for them. Keep it brief.`);
+        await (prisma as any).pendingExpense.upsert({
+          where: { phoneNumber },
+          create: { userId: user.id, phoneNumber, data: { receiptUrl, receiptText, awaitingAmount: true } },
+          update: { data: { receiptUrl, receiptText, awaitingAmount: true } },
+        });
+        return reply(msg);
+      }
+      const msg = await generateMessage("The user sent a message but Billie couldn't find an expense amount. Ask them to include the amount so you can log it.");
       return reply(msg);
     }
 
