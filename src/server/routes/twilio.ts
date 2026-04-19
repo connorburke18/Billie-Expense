@@ -39,7 +39,7 @@ router.post('/webhook', upload.none(), async (req, res) => {
 
     const user = await prisma.user.findUnique({ where: { phoneNumber } });
     if (!user) {
-      const msg = await generateMessage('A new user texted Billie but has no account. Greet them warmly and tell them to sign up on the web dashboard first.');
+      const msg = await generateMessage('Someone texted Billie for the first time but has no account yet. They need to sign up at the web dashboard before they can use the service.');
       return reply(msg);
     }
 
@@ -88,10 +88,10 @@ router.post('/webhook', upload.none(), async (req, res) => {
             where: { phoneNumber },
             data: { data: { ...merged, expenseId: expense.id } },
           });
-          const msg = await generateMessage(`Billie just logged a receipt expense. Details: ${summaryContext({ ...merged })}. Tell them it's saved and they can update anything if needed.`);
+          const msg = await generateMessage(`Expense logged from a receipt image. ${summaryContext({ ...merged })}. User can update any details if anything looks off.`);
           return reply(msg);
         }
-        const msg = await generateMessage("The user replied but Billie still couldn't find an amount. Ask once more for just the total.");
+        const msg = await generateMessage('Still no amount found in their reply. Need just the total dollar amount to log this receipt.');
         return reply(msg);
       }
 
@@ -133,13 +133,13 @@ router.post('/webhook', upload.none(), async (req, res) => {
 
         const updated = data.expenseId ? await prisma.expense.findUnique({ where: { id: data.expenseId } }) : null;
         const msg = await generateMessage(
-          `The user corrected their last expense. The updated record is now: ${JSON.stringify(updated)}. Confirm the update naturally, mentioning the new value they changed.`
+          `Expense updated. Current record: ${JSON.stringify(updated)}. User's correction was: "${bodyText}".`
         );
         return reply(msg);
       } else if (intent === 'inquiry') {
         const fullContext = JSON.stringify(data);
         const msg = await generateMessage(
-          `The user is asking a question about their last expense. Full expense data: ${fullContext}. Their question: "${bodyText}". Answer it directly and naturally.`
+          `User asked: "${bodyText}". Their last expense: ${fullContext}.`
         );
         return reply(msg);
       } else {
@@ -155,14 +155,12 @@ router.post('/webhook', upload.none(), async (req, res) => {
           const total = recent.reduce((sum, e) => sum + e.amount, 0);
           const expenseList = recent.map(e => `${e.merchant || e.description}: $${e.amount.toFixed(2)}`).join(', ');
           const msg = await generateMessage(
-            `The user wants a summary of their expenses. Here are their last ${recent.length} expenses: ${expenseList}. Total: $${total.toFixed(2)}. Give them a clean, natural summary.`
+            `User wants a summary. Last ${recent.length} expenses: ${expenseList}. Total spent: $${total.toFixed(2)}.`
           );
           return reply(msg);
         }
 
-        const msg = await generateMessage(
-          `The user said: "${bodyText}". Respond naturally and conversationally as Billie. Keep it short.`
-        );
+        const msg = await generateMessage(`User said: "${bodyText}".`);
         return reply(msg);
       }
     }
@@ -177,12 +175,12 @@ router.post('/webhook', upload.none(), async (req, res) => {
           take: 10,
         });
         if (recent.length === 0) {
-          return reply(await generateMessage("The user asked for their expense summary but they haven't logged anything yet. Let them know and encourage them to send their first receipt or expense."));
+          return reply(await generateMessage('User asked for a summary but has no expenses logged yet.'));
         }
         const total = recent.reduce((sum, e) => sum + e.amount, 0);
         const expenseList = recent.map(e => `${e.merchant || e.description}: $${e.amount.toFixed(2)}`).join(', ');
         const msg = await generateMessage(
-          `The user wants a summary of their expenses. Here are their last ${recent.length} expenses: ${expenseList}. Total: $${total.toFixed(2)}. Give them a clean, natural summary.`
+          `User wants a summary. Last ${recent.length} expenses: ${expenseList}. Total spent: $${total.toFixed(2)}.`
         );
         return reply(msg);
       }
@@ -234,7 +232,7 @@ router.post('/webhook', upload.none(), async (req, res) => {
 
     if (!expenseData.amount) {
       if (hasMedia) {
-        const msg = await generateMessage(`The user sent a receipt image but the total amount couldn't be read clearly. Ask them to reply with the amount so you can log it for them. Keep it brief.`);
+        const msg = await generateMessage('Receipt image received but the total amount is not readable. Need the user to send just the amount.');
         await (prisma as any).pendingExpense.upsert({
           where: { phoneNumber },
           create: { userId: user.id, phoneNumber, data: { receiptUrl, receiptText, awaitingAmount: true } },
@@ -242,7 +240,7 @@ router.post('/webhook', upload.none(), async (req, res) => {
         });
         return reply(msg);
       }
-      const msg = await generateMessage("The user sent a message but Billie couldn't find an expense amount. Ask them to include the amount so you can log it.");
+      const msg = await generateMessage(`User sent: "${bodyText}" but no expense amount was found in it.`);
       return reply(msg);
     }
 
@@ -278,7 +276,7 @@ router.post('/webhook', upload.none(), async (req, res) => {
     });
 
     const msg = await generateMessage(
-      `Billie just logged an expense for the user. Details: ${summaryContext({ ...expenseData, time: expenseTime, date: expenseDate })}. Tell them it's been saved. Let them know they can update the description or any detail if something's off, but don't ask them to confirm.`
+      `Expense saved. ${summaryContext({ ...expenseData, time: expenseTime, date: expenseDate })}. User can update any field if needed.`
     );
     return reply(msg);
 
