@@ -195,7 +195,7 @@ router.post('/webhook', upload.none(), async (req, res) => {
         });
 
         const expensesContext = allExpenses.map((e: any) =>
-          `[${e.category || 'Uncategorized'}] ${e.merchant || e.description}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()}`
+          `[${e.category || 'Uncategorized'}] ${e.merchant || 'No vendor'} - ${e.description || 'No description'}${e.notes && e.notes !== e.description ? ' (note: ' + e.notes + ')' : ''}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()}`
         ).join('\n');
         return replyWithHistory(`User said: "${bodyText}".
 
@@ -213,7 +213,7 @@ Last logged expense: ${summaryContext(data)}.`);
         take: 50,
       });
       const expensesContext = recent.map((e: any) =>
-        `[${e.category || 'Uncategorized'}] ${e.merchant || e.description}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()}`
+        `[${e.category || 'Uncategorized'}] ${e.merchant || 'No vendor'} - ${e.description || 'No description'}${e.notes && e.notes !== e.description ? ' (note: ' + e.notes + ')' : ''}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()}`
       ).join('\n');
       const msg = await generateMessage(`User said: "${bodyText}".\n\nTheir full expense history:\n${expensesContext}.`);
       return reply(msg);
