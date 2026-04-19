@@ -194,14 +194,6 @@ router.post('/webhook', upload.none(), async (req, res) => {
           take: 50,
         });
 
-        const summaryPhrases = ['summary', 'give me a summary', 'show summary', 'expense summary', 'spending summary'];
-        const wantsSummary = summaryPhrases.some(k => bodyText.toLowerCase().trim() === k || bodyText.toLowerCase().startsWith(k));
-
-        if (wantsSummary) {
-          if (allExpenses.length === 0) return reply(await generateMessage('User asked for a summary but has no expenses logged yet.'));
-          return reply(formatSummaryGrid(allExpenses));
-        }
-
         const expensesContext = allExpenses.map((e: any) =>
           `[${e.category || 'Uncategorized'}] ${e.merchant || e.description}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()}`
         ).join('\n');
@@ -215,17 +207,16 @@ Last logged expense: ${summaryContext(data)}.`);
     }
 
     if (!hasNewImage && bodyText) {
-      const summaryPhrases = ['summary', 'give me a summary', 'show summary', 'expense summary', 'spending summary'];
-      const wantsSummary = summaryPhrases.some(k => bodyText.toLowerCase().includes(k));
-      if (wantsSummary) {
-        const recent = await prisma.expense.findMany({
-          where: { userId: user.id },
-          orderBy: { createdAt: 'desc' },
-          take: 50,
-        });
-        if (recent.length === 0) return reply(await generateMessage('User asked for a summary but has no expenses logged yet.'));
-        return reply(formatSummaryGrid(recent));
-      }
+      const recent = await prisma.expense.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      });
+      const expensesContext = recent.map((e: any) =>
+        `[${e.category || 'Uncategorized'}] ${e.merchant || e.description}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()}`
+      ).join('\n');
+      const msg = await generateMessage(`User said: "${bodyText}".\n\nTheir full expense history:\n${expensesContext}.`);
+      return reply(msg);
     }
 
     let expenseData: any = {};
