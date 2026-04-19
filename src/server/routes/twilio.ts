@@ -155,27 +155,28 @@ router.post('/webhook', upload.none(), async (req, res) => {
           `Expense updated. Current record: ${JSON.stringify(updated)}. User's correction was: "${bodyText}".`
         );
         return reply(msg);
-      } else if (intent === 'inquiry') {
-        const fullContext = JSON.stringify(data);
-        const msg = await generateMessage(
-          `User asked: "${bodyText}". Their last expense: ${fullContext}.`
-        );
-        return reply(msg);
       } else {
-        const summaryKeywords = ['summary', 'list', 'show', 'expenses', 'how much', 'total', 'spent', 'history'];
+        const summaryKeywords = ['summary', 'list', 'show', 'expenses', 'how much', 'total', 'spent', 'history', 'what have i'];
         const wantsSummary = summaryKeywords.some(k => bodyText.toLowerCase().includes(k));
 
+        const allExpenses = await prisma.expense.findMany({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+        });
+
         if (wantsSummary) {
-          const recent = await prisma.expense.findMany({
-            where: { userId: user.id },
-            orderBy: { createdAt: 'desc' },
-            take: 50,
-          });
-          if (recent.length === 0) return reply(await generateMessage('User asked for a summary but has no expenses logged yet.'));
-          return reply(formatSummaryGrid(recent));
+          if (allExpenses.length === 0) return reply(await generateMessage('User asked for a summary but has no expenses logged yet.'));
+          return reply(formatSummaryGrid(allExpenses));
         }
 
-        const msg = await generateMessage(`User said: "${bodyText}".`);
+        const expensesContext = allExpenses.map(e =>
+          `[${e.category || 'Uncategorized'}] ${e.merchant || e.description}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()}`
+        ).join('\n');
+
+        const msg = await generateMessage(
+          `User said: "${bodyText}".\n\nTheir full expense history:\n${expensesContext}\n\nLast logged expense: ${summaryContext(data)}.`
+        );
         return reply(msg);
       }
     }
