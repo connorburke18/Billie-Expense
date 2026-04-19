@@ -12,6 +12,25 @@ const prisma = new PrismaClient();
 
 const upload = multer({ dest: 'uploads/' });
 
+function formatSummaryGrid(expenses: any[]): string {
+  const grandTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const byCategory: Record<string, number> = {};
+  for (const e of expenses) {
+    const cat = e.category || 'Uncategorized';
+    byCategory[cat] = (byCategory[cat] || 0) + e.amount;
+  }
+  const rows = Object.entries(byCategory).sort((a, b) => b[1] - a[1]);
+  const colWidth = Math.max(...rows.map(([cat]) => cat.length), 8);
+  const lines = [
+    'Category'.padEnd(colWidth) + '  Amount',
+    '-'.repeat(colWidth) + '  ' + '-'.repeat(8),
+    ...rows.map(([cat, amt]) => cat.padEnd(colWidth) + '  $' + amt.toFixed(2)),
+    '-'.repeat(colWidth) + '  ' + '-'.repeat(8),
+    'Total'.padEnd(colWidth) + '  $' + grandTotal.toFixed(2),
+  ];
+  return lines.join('\n');
+}
+
 function summaryContext(data: any): string {
   const date = data.date ? new Date(data.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today';
   const time = data.time || '';
@@ -152,20 +171,8 @@ router.post('/webhook', upload.none(), async (req, res) => {
             orderBy: { createdAt: 'desc' },
             take: 50,
           });
-          const grandTotal = recent.reduce((sum, e) => sum + e.amount, 0);
-          const byCategory: Record<string, number> = {};
-          for (const e of recent) {
-            const cat = e.category || 'Uncategorized';
-            byCategory[cat] = (byCategory[cat] || 0) + e.amount;
-          }
-          const categoryBreakdown = Object.entries(byCategory)
-            .sort((a, b) => b[1] - a[1])
-            .map(([cat, amt]) => `${cat}: $${amt.toFixed(2)}`)
-            .join(', ');
-          const msg = await generateMessage(
-            `User wants an expense summary. Grand total: $${grandTotal.toFixed(2)} across ${recent.length} expenses. Breakdown by category: ${categoryBreakdown}.`
-          );
-          return reply(msg);
+          if (recent.length === 0) return reply(await generateMessage('User asked for a summary but has no expenses logged yet.'));
+          return reply(formatSummaryGrid(recent));
         }
 
         const msg = await generateMessage(`User said: "${bodyText}".`);
@@ -182,23 +189,8 @@ router.post('/webhook', upload.none(), async (req, res) => {
           orderBy: { createdAt: 'desc' },
           take: 50,
         });
-        if (recent.length === 0) {
-          return reply(await generateMessage('User asked for a summary but has no expenses logged yet.'));
-        }
-        const grandTotal = recent.reduce((sum, e) => sum + e.amount, 0);
-        const byCategory: Record<string, number> = {};
-        for (const e of recent) {
-          const cat = e.category || 'Uncategorized';
-          byCategory[cat] = (byCategory[cat] || 0) + e.amount;
-        }
-        const categoryBreakdown = Object.entries(byCategory)
-          .sort((a, b) => b[1] - a[1])
-          .map(([cat, amt]) => `${cat}: $${amt.toFixed(2)}`)
-          .join(', ');
-        const msg = await generateMessage(
-          `User wants an expense summary. Grand total: $${grandTotal.toFixed(2)} across ${recent.length} expenses. Breakdown by category: ${categoryBreakdown}.`
-        );
-        return reply(msg);
+        if (recent.length === 0) return reply(await generateMessage('User asked for a summary but has no expenses logged yet.'));
+        return reply(formatSummaryGrid(recent));
       }
     }
 
