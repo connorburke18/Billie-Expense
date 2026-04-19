@@ -5,6 +5,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { processReceiptFile } from '../services/ocr';
+import { uploadReceiptImage } from '../services/storage';
 import { parseExpenseFromText, generateMessage, classifyMessage, dispatchCommand } from '../services/ai';
 import {
   querySummary, queryListCategory, queryTotalPeriod, queryTopExpenses,
@@ -275,6 +276,12 @@ router.post('/webhook', upload.none(), async (req, res) => {
         console.log('📦 Image buffer size:', imageBuffer.length);
         const tempPath = path.join('/tmp', `receipt_${Date.now()}.jpg`);
         fs.writeFileSync(tempPath, imageBuffer);
+
+        const cloudinaryUrl = await uploadReceiptImage(tempPath);
+        if (cloudinaryUrl) {
+          receiptUrl = cloudinaryUrl;
+          console.log('☁️ Uploaded to Cloudinary:', cloudinaryUrl);
+        }
 
         const result = await processReceiptFile(tempPath);
         receiptText = result.text;
