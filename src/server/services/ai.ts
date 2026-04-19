@@ -57,6 +57,44 @@ export async function generateMessage(
   }
 }
 
+export async function dispatchCommand(
+  body: string,
+  history: { role: 'user' | 'assistant'; content: string }[],
+  allExpenseIds: { id: string; merchant: string | null; description: string; amount: number; date: Date; category: string | null }[]
+): Promise<string | null> {
+  if (!anthropic) return null;
+  const idList = allExpenseIds.map(e =>
+    `id:${e.id} | ${e.merchant || 'No vendor'} - ${e.description}: ${e.amount.toFixed(2)} | ${e.category || 'Uncategorized'} | ${new Date(e.date).toLocaleDateString()}`
+  ).join('\n');
+  try {
+    const res = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 60,
+      temperature: 0,
+      system: `You route user messages to one of these commands. Reply with ONLY the command string, nothing else.
+Commands:
+SUMMARY
+LIST_CATEGORY:<category>
+TOTAL_PERIOD:<today|week|month|last_month|year>
+TOP_EXPENSES:<n>
+FIND:<keyword>
+COMPARE_PERIOD
+DAILY_AVERAGE
+BY_DATE:<YYYY-MM-DD>
+DELETE:<id>
+NONE`,
+      messages: [
+        ...history,
+        { role: 'user', content: `User message: "${body}"\n\nExpense IDs available:\n${idList}` },
+      ],
+    });
+    const cmd = res.content[0].type === 'text' ? res.content[0].text.trim() : 'NONE';
+    return cmd === 'NONE' ? null : cmd;
+  } catch {
+    return null;
+  }
+}
+
 export async function parseExpenseFromText(
   receiptText: string,
   userNote: string

@@ -5,12 +5,37 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { processReceiptFile } from '../services/ocr';
-import { parseExpenseFromText, generateMessage, classifyMessage } from '../services/ai';
+import { parseExpenseFromText, generateMessage, classifyMessage, dispatchCommand } from '../services/ai';
+import {
+  querySummary, queryListCategory, queryTotalPeriod, queryTopExpenses,
+  queryFind, queryComparePeriod, queryDailyAverage, queryByDate, queryDelete,
+} from '../services/queries';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 const upload = multer({ dest: 'uploads/' });
+
+async function executeDispatch(bodyText: string, history: { role: 'user' | 'assistant'; content: string }[], userId: string): Promise<string | null> {
+  const allExpenses = await prisma.expense.findMany({
+    where: { userId },
+    orderBy: { date: 'desc' },
+    select: { id: true, merchant: true, description: true, amount: true, date: true, category: true },
+  });
+  const cmd = await dispatchCommand(bodyText, history, allExpenses);
+  if (!cmd) return null;
+
+  if (cmd === 'SUMMARY') return (await querySummary(userId)).data;
+  if (cmd.startsWith('LIST_CATEGORY:')) return (await queryListCategory(userId, cmd.slice(14))).data;
+  if (cmd.startsWith('TOTAL_PERIOD:')) return (await queryTotalPeriod(userId, cmd.slice(13))).data;
+  if (cmd.startsWith('TOP_EXPENSES:')) return (await queryTopExpenses(userId, parseInt(cmd.slice(13)) || 5)).data;
+  if (cmd.startsWith('FIND:')) return (await queryFind(userId, cmd.slice(5))).data;
+  if (cmd === 'COMPARE_PERIOD') return (await queryComparePeriod(userId)).data;
+  if (cmd === 'DAILY_AVERAGE') return (await queryDailyAverage(userId)).data;
+  if (cmd.startsWith('BY_DATE:')) return (await queryByDate(userId, cmd.slice(8))).data;
+  if (cmd.startsWith('DELETE:')) return (await queryDelete(userId, cmd.slice(7))).data;
+  return null;
+}
 
 function formatSummaryGrid(expenses: any[]): string {
   const grandTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
@@ -211,54 +236,19 @@ router.post('/webhook', upload.none(), async (req, res) => {
         }
         return replyWithHistory(`Couldn't find that expense to delete. User said: "${bodyText}". List: ${expenseList}`);
       } else {
-        const allExpenses = await prisma.expense.findMany({
-          where: { userId: user.id },
-          orderBy: { createdAt: 'desc' },
-          take: 50,
-        });
-
-        const byCategory: Record<string, { total: number; count: number; items: string[] }> = {};
-        for (const e of allExpenses) {
-          const cat = (e as any).category || 'Uncategorized';
-          if (!byCategory[cat]) byCategory[cat] = { total: 0, count: 0, items: [] };
-          byCategory[cat].total += e.amount;
-          byCategory[cat].count += 1;
-          byCategory[cat].items.push(`${(e as any).merchant || 'No vendor'} - ${e.description || 'No description'}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()} [id:${e.id}]`);
-        }
-        const grandTotal = allExpenses.reduce((sum, e) => sum + e.amount, 0);
-        const statsContext = Object.entries(byCategory)
-          .sort((a, b) => b[1].total - a[1].total)
-          .map(([cat, s]) => `${cat}: $${s.total.toFixed(2)} (${s.count} expense${s.count > 1 ? 's' : ''})\n  ${s.items.join('\n  ')}`)
-          .join('\n');
-
-        return replyWithHistory(`User said: "${bodyText}".\n\nExpense data (DO NOT recalculate - use these exact figures):\nGrand total: $${grandTotal.toFixed(2)} across ${allExpenses.length} expenses.\n\n${statsContext}`);
+        const result = await executeDispatch(bodyText, history, user.id);
+        if (result !== null) return replyWithHistory(`Query result:\n${result}\n\nUser asked: "${bodyText}". Present this data naturally.`);
+        return replyWithHistory(`User said: "${bodyText}". Respond naturally.`);
       }
     }
 
     if (!hasNewImage && bodyText) {
-      const recent = await prisma.expense.findMany({
-        where: { userId: user.id },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-      });
-
-      const byCategory: Record<string, { total: number; count: number; items: string[] }> = {};
-      for (const e of recent) {
-        const cat = e.category || 'Uncategorized';
-        if (!byCategory[cat]) byCategory[cat] = { total: 0, count: 0, items: [] };
-        byCategory[cat].total += e.amount;
-        byCategory[cat].count += 1;
-        byCategory[cat].items.push(`${e.merchant || 'No vendor'} - ${e.description || 'No description'}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()} [id:${e.id}]`);
+      const result = await executeDispatch(bodyText, [], user.id);
+      if (result !== null) {
+        const msg = await generateMessage(`Query result:\n${result}\n\nUser asked: "${bodyText}". Present this data naturally.`);
+        return reply(msg);
       }
-      const grandTotal = recent.reduce((sum, e) => sum + e.amount, 0);
-      const statsContext = Object.entries(byCategory)
-        .sort((a, b) => b[1].total - a[1].total)
-        .map(([cat, s]) => `${cat}: $${s.total.toFixed(2)} (${s.count} expense${s.count > 1 ? 's' : ''})\n  ${s.items.join('\n  ')}`)
-        .join('\n');
-
-      const msg = await generateMessage(
-        `User said: "${bodyText}".\n\nExpense data (DO NOT recalculate - use these exact figures):\nGrand total: $${grandTotal.toFixed(2)} across ${recent.length} expenses.\n\n${statsContext}`
-      );
+      const msg = await generateMessage(`User said: "${bodyText}". Respond naturally as Billie.`);
       return reply(msg);
     }
 
