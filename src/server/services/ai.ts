@@ -82,6 +82,7 @@ COMPARE_PERIOD
 DAILY_AVERAGE
 BY_DATE:<YYYY-MM-DD>
 DELETE:<id>
+GET_RECEIPT:<id>
 NONE`,
       messages: [
         ...history,

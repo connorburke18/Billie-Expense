@@ -194,6 +194,16 @@ export async function queryByDate(userId: string, dateStr: string): Promise<Quer
   return { data: '```\n' + lines.join('\n') + '\n```' };
 }
 
+export async function queryGetReceipt(userId: string, expenseId: string): Promise<QueryResult & { mediaUrl?: string }> {
+  const expense = await prisma.expense.findUnique({ where: { id: expenseId } });
+  if (!expense || expense.userId !== userId) return { data: 'Expense not found.' };
+  if (!expense.receiptUrl) return { data: `No receipt image on file for ${expense.merchant || expense.description}.` };
+  return {
+    data: `Receipt for ${expense.merchant || expense.description} — ${fmt(expense.amount)} on ${new Date(expense.date).toLocaleDateString()}`,
+    mediaUrl: expense.receiptUrl,
+  };
+}
+
 export async function queryDelete(userId: string, expenseId: string): Promise<QueryResult> {
   const expense = await prisma.expense.findUnique({ where: { id: expenseId } });
   if (!expense || expense.userId !== userId) return { data: `Expense not found.` };

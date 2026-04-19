@@ -9,7 +9,7 @@ import { uploadReceiptImage } from '../services/storage';
 import { parseExpenseFromText, generateMessage, classifyMessage, dispatchCommand } from '../services/ai';
 import {
   querySummary, queryListCategory, queryTotalPeriod, queryTopExpenses,
-  queryFind, queryComparePeriod, queryDailyAverage, queryByDate, queryDelete,
+  queryFind, queryComparePeriod, queryDailyAverage, queryByDate, queryDelete, queryGetReceipt,
 } from '../services/queries';
 
 const router = express.Router();
@@ -35,6 +35,11 @@ async function executeDispatch(bodyText: string, history: { role: 'user' | 'assi
   if (cmd === 'DAILY_AVERAGE') return (await queryDailyAverage(userId)).data;
   if (cmd.startsWith('BY_DATE:')) return (await queryByDate(userId, cmd.slice(8))).data;
   if (cmd.startsWith('DELETE:')) return (await queryDelete(userId, cmd.slice(7))).data;
+  if (cmd.startsWith('GET_RECEIPT:')) {
+    const result = await queryGetReceipt(userId, cmd.slice(12));
+    if (result.mediaUrl) return `MEDIA:${result.mediaUrl}|${result.data}`;
+    return result.data;
+  }
   return null;
 }
 
@@ -238,7 +243,17 @@ router.post('/webhook', upload.none(), async (req, res) => {
         return replyWithHistory(`Couldn't find that expense to delete. User said: "${bodyText}". List: ${expenseList}`);
       } else {
         const result = await executeDispatch(bodyText, history, user.id);
-        if (result !== null) return replyWithHistory(`Query result:\n${result}\n\nUser asked: "${bodyText}". Present this data naturally.`);
+        if (result !== null) {
+          if (result.startsWith('MEDIA:')) {
+            const [mediaUrl, caption] = result.slice(6).split('|');
+            const twiml = new twilio.twiml.MessagingResponse();
+            const msg = twiml.message(caption || '');
+            msg.media(mediaUrl);
+            res.type('text/xml');
+            return res.send(twiml.toString());
+          }
+          return replyWithHistory(`Query result:\n${result}\n\nUser asked: "${bodyText}". Present this data naturally.`);
+        }
         return replyWithHistory(`User said: "${bodyText}". Respond naturally.`);
       }
     }
@@ -246,6 +261,14 @@ router.post('/webhook', upload.none(), async (req, res) => {
     if (!hasNewImage && bodyText) {
       const result = await executeDispatch(bodyText, [], user.id);
       if (result !== null) {
+        if (result.startsWith('MEDIA:')) {
+          const [mediaUrl, caption] = result.slice(6).split('|');
+          const twiml = new twilio.twiml.MessagingResponse();
+          const msg = twiml.message(caption || '');
+          msg.media(mediaUrl);
+          res.type('text/xml');
+          return res.send(twiml.toString());
+        }
         const msg = await generateMessage(`Query result:\n${result}\n\nUser asked: "${bodyText}". Present this data naturally.`);
         return reply(msg);
       }
