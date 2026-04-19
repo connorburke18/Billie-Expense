@@ -60,7 +60,7 @@ export async function generateMessage(
 export async function dispatchCommand(
   body: string,
   history: { role: 'user' | 'assistant'; content: string }[],
-  allExpenseIds: { id: string; merchant: string | null; description: string; amount: number; date: Date; category: string | null }[]
+  allExpenseIds: { id: string; merchant: string | null; description: string; amount: number; date: Date; category: string | null; createdAt?: Date }[]
 ): Promise<string | null> {
   if (!anthropic) return null;
   const idList = allExpenseIds.map(e =>

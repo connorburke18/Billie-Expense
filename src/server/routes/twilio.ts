@@ -20,8 +20,8 @@ const upload = multer({ dest: 'uploads/' });
 async function executeDispatch(bodyText: string, history: { role: 'user' | 'assistant'; content: string }[], userId: string): Promise<string | null> {
   const allExpenses = await prisma.expense.findMany({
     where: { userId },
-    orderBy: { date: 'desc' },
-    select: { id: true, merchant: true, description: true, amount: true, date: true, category: true },
+    orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+    select: { id: true, merchant: true, description: true, amount: true, date: true, category: true, createdAt: true },
   });
   const cmd = await dispatchCommand(bodyText, history, allExpenses);
   if (!cmd) return null;
