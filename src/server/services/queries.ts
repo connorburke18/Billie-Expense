@@ -60,7 +60,7 @@ export async function querySummary(userId: string): Promise<QueryResult> {
     '-'.repeat(colW) + '  ' + '-'.repeat(9) + '  ' + '-'.repeat(5),
     'Total'.padEnd(colW) + '  ' + fmt(grandTotal).padEnd(9) + '  ' + String(expenses.length),
   ];
-  return { data: lines.join('\n'), raw: { grandTotal, count: expenses.length } };
+  return { data: '```\n' + lines.join('\n') + '\n```', raw: { grandTotal, count: expenses.length } };
 }
 
 export async function queryListCategory(userId: string, category: string): Promise<QueryResult> {
@@ -76,7 +76,7 @@ export async function queryListCategory(userId: string, category: string): Promi
     '-'.repeat(colW) + '  ' + '-'.repeat(9),
     'Total'.padEnd(colW) + '  ' + fmt(total),
   ];
-  return { data: lines.join('\n'), raw: { category, total, count: matched.length } };
+  return { data: '```\n' + lines.join('\n') + '\n```', raw: { category, total, count: matched.length } };
 }
 
 export async function queryTotalPeriod(userId: string, period: string): Promise<QueryResult> {
@@ -94,7 +94,7 @@ export async function queryTotalPeriod(userId: string, period: string): Promise<
     '',
     ...expenses.map(e => `  ${(e.merchant || e.description || 'Unknown').padEnd(30)}  ${fmt(e.amount)}`),
   ];
-  return { data: lines.join('\n'), raw: { period, total, count: expenses.length } };
+  return { data: '```\n' + lines.join('\n') + '\n```', raw: { period, total, count: expenses.length } };
 }
 
 export async function queryTopExpenses(userId: string, n: number): Promise<QueryResult> {
@@ -110,7 +110,7 @@ export async function queryTopExpenses(userId: string, n: number): Promise<Query
     '-'.repeat(colW + 22),
     ...expenses.map((e, i) => `${String(i + 1).padStart(2)}. ${(e.merchant || e.description || 'Unknown').padEnd(colW)}  ${fmt(e.amount)}  ${new Date(e.date).toLocaleDateString()}`),
   ];
-  return { data: lines.join('\n') };
+  return { data: '```\n' + lines.join('\n') + '\n```' };
 }
 
 export async function queryFind(userId: string, keyword: string): Promise<QueryResult> {
@@ -132,7 +132,7 @@ export async function queryFind(userId: string, keyword: string): Promise<QueryR
     '',
     ...expenses.map(e => `  ${new Date(e.date).toLocaleDateString()}  ${(e.merchant || 'No vendor').padEnd(25)}  ${fmt(e.amount)}  ${e.category || 'Uncategorized'}`),
   ];
-  return { data: lines.join('\n'), raw: { keyword, total, count: expenses.length, ids: expenses.map(e => e.id) } };
+  return { data: '```\n' + lines.join('\n') + '\n```', raw: { keyword, total, count: expenses.length, ids: expenses.map(e => e.id) } };
 }
 
 export async function queryComparePeriod(userId: string): Promise<QueryResult> {
@@ -159,7 +159,7 @@ export async function queryComparePeriod(userId: string): Promise<QueryResult> {
     '-'.repeat(30),
     `Change:       ${diff >= 0 ? '+' : ''}${fmt(diff)} (${direction}${pct !== 'N/A' ? ' ' + pct + '%' : ''})`,
   ];
-  return { data: lines.join('\n'), raw: { thisTotal, lastTotal, diff, direction, pct } };
+  return { data: '```\n' + lines.join('\n') + '\n```', raw: { thisTotal, lastTotal, diff, direction, pct } };
 }
 
 export async function queryDailyAverage(userId: string): Promise<QueryResult> {
@@ -191,7 +191,7 @@ export async function queryByDate(userId: string, dateStr: string): Promise<Quer
     '',
     ...expenses.map(e => `  ${e.time || '--:--'}  ${(e.merchant || e.description || 'Unknown').padEnd(25)}  ${fmt(e.amount)}`),
   ];
-  return { data: lines.join('\n') };
+  return { data: '```\n' + lines.join('\n') + '\n```' };
 }
 
 export async function queryDelete(userId: string, expenseId: string): Promise<QueryResult> {
