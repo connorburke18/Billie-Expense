@@ -5,7 +5,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { processReceiptFile } from '../services/ocr';
-import { parseExpenseFromText, generateMessage } from '../services/ai';
+import { parseExpenseFromText, generateMessage, classifyMessage } from '../services/ai';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -48,38 +48,52 @@ router.post('/webhook', upload.none(), async (req, res) => {
 
     if (pending) {
       const data = pending.data as any;
+      const intent = await classifyMessage(bodyText, summaryContext(data));
 
-      const corrections: any = { ...data };
-      const amountMatch = bodyText.match(/amount\s+is\s+\$?(\d+\.?\d*)/i) || bodyText.match(/\$(\d+\.?\d*)/);
-      const vendorMatch = bodyText.match(/vendor\s+is\s+(.+)/i) || bodyText.match(/merchant\s+is\s+(.+)/i) || bodyText.match(/store\s+is\s+(.+)/i);
-      const dateMatch = bodyText.match(/date\s+is\s+(.+)/i);
-      const timeMatch = bodyText.match(/time\s+is\s+(.+)/i);
-      const descMatch = bodyText.match(/description\s+is\s+(.+)/i) || bodyText.match(/expense\s+is\s+(.+)/i) || bodyText.match(/note\s+is\s+(.+)/i);
+      if (intent === 'new_expense') {
+        await (prisma as any).pendingExpense.delete({ where: { phoneNumber } });
+      } else if (intent === 'correction') {
+        const corrections: any = { ...data };
+        const amountMatch = bodyText.match(/amount\s+is\s+\$?(\d+\.?\d*)/i) || bodyText.match(/\$(\d+\.?\d*)/);
+        const vendorMatch = bodyText.match(/vendor\s+is\s+(.+)/i) || bodyText.match(/merchant\s+is\s+(.+)/i) || bodyText.match(/store\s+is\s+(.+)/i);
+        const dateMatch = bodyText.match(/date\s+is\s+(.+)/i);
+        const timeMatch = bodyText.match(/time\s+is\s+(.+)/i);
+        const descMatch = bodyText.match(/description\s+is\s+(.+)/i) || bodyText.match(/note\s+is\s+(.+)/i) || bodyText.match(/category\s+is\s+(.+)/i);
 
-      const anyCorrectionFound = amountMatch || vendorMatch || dateMatch || timeMatch || descMatch;
+        if (amountMatch) corrections.amount = parseFloat(amountMatch[1]);
+        if (vendorMatch) corrections.merchant = vendorMatch[1].trim();
+        if (dateMatch) corrections.date = dateMatch[1].trim();
+        if (timeMatch) corrections.time = timeMatch[1].trim();
+        if (descMatch) corrections.description = descMatch[1].trim();
 
-      if (amountMatch) corrections.amount = parseFloat(amountMatch[1]);
-      if (vendorMatch) corrections.merchant = vendorMatch[1].trim();
-      if (dateMatch) corrections.date = dateMatch[1].trim();
-      if (timeMatch) corrections.time = timeMatch[1].trim();
-      if (descMatch) corrections.description = descMatch[1].trim();
+        if (data.expenseId) {
+          await prisma.expense.update({
+            where: { id: data.expenseId },
+            data: {
+              amount: corrections.amount ? parseFloat(corrections.amount) : undefined,
+              merchant: corrections.merchant,
+              description: corrections.description,
+              time: corrections.time,
+              date: corrections.date ? new Date(corrections.date) : undefined,
+            },
+          });
+        }
 
-      if (anyCorrectionFound) {
         await (prisma as any).pendingExpense.update({
           where: { phoneNumber },
           data: { data: corrections },
         });
 
         const msg = await generateMessage(
-          `The user updated their pending expense. New details: ${summaryContext(corrections)}. Confirm the update casually and let them know it's been updated on their record. Tell them they can still make changes if needed.`
+          `The user corrected their last expense. Updated details: ${summaryContext(corrections)}. Acknowledge the change casually. Let them know it's updated.`
+        );
+        return reply(msg);
+      } else {
+        const msg = await generateMessage(
+          `The user sent an unrelated message. Their last expense was: ${summaryContext(data)}. Respond briefly and naturally.`
         );
         return reply(msg);
       }
-
-      const msg = await generateMessage(
-        `The user sent a message that doesn't seem to be a correction. Their pending expense is: ${summaryContext(data)}. Respond naturally - maybe they're asking something or sending something unrelated. Keep it brief.`
-      );
-      return reply(msg);
     }
 
     let expenseData: any = {};
