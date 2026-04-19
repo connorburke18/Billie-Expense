@@ -188,24 +188,23 @@ router.post('/webhook', upload.none(), async (req, res) => {
         const updated = data.expenseId ? await prisma.expense.findUnique({ where: { id: data.expenseId } }) : null;
         return replyWithHistory(`Expense updated. Current record: ${JSON.stringify(updated)}. User's correction was: "${bodyText}".`);
       } else {
-        const summaryKeywords = ['summary', 'list', 'show', 'expenses', 'how much', 'total', 'spent', 'history', 'what have i'];
-        const wantsSummary = summaryKeywords.some(k => bodyText.toLowerCase().includes(k));
-
         const allExpenses = await prisma.expense.findMany({
           where: { userId: user.id },
           orderBy: { createdAt: 'desc' },
           take: 50,
         });
 
+        const summaryPhrases = ['summary', 'give me a summary', 'show summary', 'expense summary', 'spending summary'];
+        const wantsSummary = summaryPhrases.some(k => bodyText.toLowerCase().trim() === k || bodyText.toLowerCase().startsWith(k));
+
         if (wantsSummary) {
           if (allExpenses.length === 0) return reply(await generateMessage('User asked for a summary but has no expenses logged yet.'));
           return reply(formatSummaryGrid(allExpenses));
         }
 
-        const expensesContext = allExpenses.map(e =>
+        const expensesContext = allExpenses.map((e: any) =>
           `[${e.category || 'Uncategorized'}] ${e.merchant || e.description}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()}`
         ).join('\n');
-
         return replyWithHistory(`User said: "${bodyText}".
 
 Their full expense history:
@@ -216,8 +215,8 @@ Last logged expense: ${summaryContext(data)}.`);
     }
 
     if (!hasNewImage && bodyText) {
-      const summaryKeywords = ['summary', 'list', 'show', 'expenses', 'how much', 'total', 'spent', 'history', 'what have i'];
-      const wantsSummary = summaryKeywords.some(k => bodyText.toLowerCase().includes(k));
+      const summaryPhrases = ['summary', 'give me a summary', 'show summary', 'expense summary', 'spending summary'];
+      const wantsSummary = summaryPhrases.some(k => bodyText.toLowerCase().includes(k));
       if (wantsSummary) {
         const recent = await prisma.expense.findMany({
           where: { userId: user.id },
