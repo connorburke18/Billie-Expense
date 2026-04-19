@@ -187,6 +187,29 @@ router.post('/webhook', upload.none(), async (req, res) => {
 
         const updated = data.expenseId ? await prisma.expense.findUnique({ where: { id: data.expenseId } }) : null;
         return replyWithHistory(`Expense updated. Current record: ${JSON.stringify(updated)}. User's correction was: "${bodyText}".`);
+      } else if (intent === 'delete') {
+        const allExpenses = await prisma.expense.findMany({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+        });
+        const expenseList = allExpenses.map((e: any) =>
+          `id:${e.id} | ${e.merchant || 'No vendor'} - ${e.description || ''}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()}`
+        ).join('\n');
+
+        const deletePrompt = `User wants to delete an expense. They said: "${bodyText}". Expense list:\n${expenseList}\n\nRespond with ONLY the id of the expense to delete in the format: DELETE:id`;
+        const deleteResponse = await generateMessage(deletePrompt, history);
+        const deleteMatch = deleteResponse.match(/DELETE:([a-zA-Z0-9-]+)/);
+
+        if (deleteMatch) {
+          const expenseId = deleteMatch[1];
+          const toDelete = await prisma.expense.findUnique({ where: { id: expenseId } });
+          if (toDelete && toDelete.userId === user.id) {
+            await prisma.expense.delete({ where: { id: expenseId } });
+            return replyWithHistory(`Expense deleted: ${toDelete.merchant || toDelete.description} $${toDelete.amount.toFixed(2)} on ${new Date(toDelete.date).toLocaleDateString()}.`);
+          }
+        }
+        return replyWithHistory(`Couldn't find that expense to delete. User said: "${bodyText}". List: ${expenseList}`);
       } else {
         const allExpenses = await prisma.expense.findMany({
           where: { userId: user.id },
@@ -194,15 +217,21 @@ router.post('/webhook', upload.none(), async (req, res) => {
           take: 50,
         });
 
-        const expensesContext = allExpenses.map((e: any) =>
-          `[${e.category || 'Uncategorized'}] ${e.merchant || 'No vendor'} - ${e.description || 'No description'}${e.notes && e.notes !== e.description ? ' (note: ' + e.notes + ')' : ''}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()}`
-        ).join('\n');
-        return replyWithHistory(`User said: "${bodyText}".
+        const byCategory: Record<string, { total: number; count: number; items: string[] }> = {};
+        for (const e of allExpenses) {
+          const cat = (e as any).category || 'Uncategorized';
+          if (!byCategory[cat]) byCategory[cat] = { total: 0, count: 0, items: [] };
+          byCategory[cat].total += e.amount;
+          byCategory[cat].count += 1;
+          byCategory[cat].items.push(`${(e as any).merchant || 'No vendor'} - ${e.description || 'No description'}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()} [id:${e.id}]`);
+        }
+        const grandTotal = allExpenses.reduce((sum, e) => sum + e.amount, 0);
+        const statsContext = Object.entries(byCategory)
+          .sort((a, b) => b[1].total - a[1].total)
+          .map(([cat, s]) => `${cat}: $${s.total.toFixed(2)} (${s.count} expense${s.count > 1 ? 's' : ''})\n  ${s.items.join('\n  ')}`)
+          .join('\n');
 
-Their full expense history:
-${expensesContext}
-
-Last logged expense: ${summaryContext(data)}.`);
+        return replyWithHistory(`User said: "${bodyText}".\n\nExpense data (DO NOT recalculate - use these exact figures):\nGrand total: $${grandTotal.toFixed(2)} across ${allExpenses.length} expenses.\n\n${statsContext}`);
       }
     }
 
@@ -212,10 +241,24 @@ Last logged expense: ${summaryContext(data)}.`);
         orderBy: { createdAt: 'desc' },
         take: 50,
       });
-      const expensesContext = recent.map((e: any) =>
-        `[${e.category || 'Uncategorized'}] ${e.merchant || 'No vendor'} - ${e.description || 'No description'}${e.notes && e.notes !== e.description ? ' (note: ' + e.notes + ')' : ''}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()}`
-      ).join('\n');
-      const msg = await generateMessage(`User said: "${bodyText}".\n\nTheir full expense history:\n${expensesContext}.`);
+
+      const byCategory: Record<string, { total: number; count: number; items: string[] }> = {};
+      for (const e of recent) {
+        const cat = e.category || 'Uncategorized';
+        if (!byCategory[cat]) byCategory[cat] = { total: 0, count: 0, items: [] };
+        byCategory[cat].total += e.amount;
+        byCategory[cat].count += 1;
+        byCategory[cat].items.push(`${e.merchant || 'No vendor'} - ${e.description || 'No description'}: $${e.amount.toFixed(2)} on ${new Date(e.date).toLocaleDateString()} [id:${e.id}]`);
+      }
+      const grandTotal = recent.reduce((sum, e) => sum + e.amount, 0);
+      const statsContext = Object.entries(byCategory)
+        .sort((a, b) => b[1].total - a[1].total)
+        .map(([cat, s]) => `${cat}: $${s.total.toFixed(2)} (${s.count} expense${s.count > 1 ? 's' : ''})\n  ${s.items.join('\n  ')}`)
+        .join('\n');
+
+      const msg = await generateMessage(
+        `User said: "${bodyText}".\n\nExpense data (DO NOT recalculate - use these exact figures):\nGrand total: $${grandTotal.toFixed(2)} across ${recent.length} expenses.\n\n${statsContext}`
+      );
       return reply(msg);
     }
 
