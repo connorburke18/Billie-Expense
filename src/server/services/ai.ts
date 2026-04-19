@@ -14,22 +14,23 @@ interface ExpenseData {
   tags?: string[];
 }
 
-export async function classifyMessage(body: string, pendingContext: string): Promise<'new_expense' | 'correction' | 'other'> {
+export async function classifyMessage(body: string, pendingContext: string): Promise<'new_expense' | 'correction' | 'inquiry' | 'other'> {
   if (!anthropic) return 'new_expense';
   try {
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 10,
       temperature: 0,
-      system: 'You classify incoming messages for an expense tracker. Reply with ONLY one word: new_expense, correction, or other.',
+      system: 'You classify incoming messages for an expense tracker. Reply with ONLY one word: new_expense, correction, inquiry, or other. "inquiry" means the user is asking a question about their last expense.',
       messages: [{
         role: 'user',
-        content: `Last saved expense: ${pendingContext}\n\nNew message: "${body}"\n\nIs this a new_expense, a correction to the last expense, or other?`,
+        content: `Last saved expense: ${pendingContext}\n\nNew message: "${body}"\n\nClassify this as new_expense, correction, inquiry, or other?`,
       }],
     });
     const text = (message.content[0].type === 'text' ? message.content[0].text : '').trim().toLowerCase();
     if (text.includes('new_expense')) return 'new_expense';
     if (text.includes('correction')) return 'correction';
+    if (text.includes('inquiry')) return 'inquiry';
     return 'other';
   } catch {
     return 'new_expense';

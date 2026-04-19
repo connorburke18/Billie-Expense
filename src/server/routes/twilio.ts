@@ -125,9 +125,15 @@ router.post('/webhook', upload.none(), async (req, res) => {
           `The user corrected their last expense. Updated details: ${summaryContext(corrections)}. Acknowledge the change casually. Let them know it's updated.`
         );
         return reply(msg);
+      } else if (intent === 'inquiry') {
+        const fullContext = JSON.stringify(data);
+        const msg = await generateMessage(
+          `The user is asking a question about their last expense. Full expense data: ${fullContext}. Their question: "${bodyText}". Answer it directly and naturally.`
+        );
+        return reply(msg);
       } else {
         const msg = await generateMessage(
-          `The user sent an unrelated message. Their last expense was: ${summaryContext(data)}. Respond briefly and naturally.`
+          `The user sent a message that seems unrelated to expense tracking. Respond briefly and naturally, but stay in character as Billie, an expense tracker.`
         );
         return reply(msg);
       }
