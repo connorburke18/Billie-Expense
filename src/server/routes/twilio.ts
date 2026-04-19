@@ -150,12 +150,20 @@ router.post('/webhook', upload.none(), async (req, res) => {
           const recent = await prisma.expense.findMany({
             where: { userId: user.id },
             orderBy: { createdAt: 'desc' },
-            take: 10,
+            take: 50,
           });
-          const total = recent.reduce((sum, e) => sum + e.amount, 0);
-          const expenseList = recent.map(e => `${e.merchant || e.description}: $${e.amount.toFixed(2)}`).join(', ');
+          const grandTotal = recent.reduce((sum, e) => sum + e.amount, 0);
+          const byCategory: Record<string, number> = {};
+          for (const e of recent) {
+            const cat = e.category || 'Uncategorized';
+            byCategory[cat] = (byCategory[cat] || 0) + e.amount;
+          }
+          const categoryBreakdown = Object.entries(byCategory)
+            .sort((a, b) => b[1] - a[1])
+            .map(([cat, amt]) => `${cat}: $${amt.toFixed(2)}`)
+            .join(', ');
           const msg = await generateMessage(
-            `User wants a summary. Last ${recent.length} expenses: ${expenseList}. Total spent: $${total.toFixed(2)}.`
+            `User wants an expense summary. Grand total: $${grandTotal.toFixed(2)} across ${recent.length} expenses. Breakdown by category: ${categoryBreakdown}.`
           );
           return reply(msg);
         }
@@ -172,15 +180,23 @@ router.post('/webhook', upload.none(), async (req, res) => {
         const recent = await prisma.expense.findMany({
           where: { userId: user.id },
           orderBy: { createdAt: 'desc' },
-          take: 10,
+          take: 50,
         });
         if (recent.length === 0) {
           return reply(await generateMessage('User asked for a summary but has no expenses logged yet.'));
         }
-        const total = recent.reduce((sum, e) => sum + e.amount, 0);
-        const expenseList = recent.map(e => `${e.merchant || e.description}: $${e.amount.toFixed(2)}`).join(', ');
+        const grandTotal = recent.reduce((sum, e) => sum + e.amount, 0);
+        const byCategory: Record<string, number> = {};
+        for (const e of recent) {
+          const cat = e.category || 'Uncategorized';
+          byCategory[cat] = (byCategory[cat] || 0) + e.amount;
+        }
+        const categoryBreakdown = Object.entries(byCategory)
+          .sort((a, b) => b[1] - a[1])
+          .map(([cat, amt]) => `${cat}: $${amt.toFixed(2)}`)
+          .join(', ');
         const msg = await generateMessage(
-          `User wants a summary. Last ${recent.length} expenses: ${expenseList}. Total spent: $${total.toFixed(2)}.`
+          `User wants an expense summary. Grand total: $${grandTotal.toFixed(2)} across ${recent.length} expenses. Breakdown by category: ${categoryBreakdown}.`
         );
         return reply(msg);
       }
