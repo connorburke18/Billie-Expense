@@ -138,29 +138,33 @@ router.post('/webhook', upload.none(), async (req, res) => {
     let receiptText: string | undefined;
 
     if (NumMedia && parseInt(NumMedia) > 0) {
-      console.log('📸 Processing receipt image...');
+      console.log('📸 Processing receipt image. NumMedia:', NumMedia, 'URL:', MediaUrl0);
       try {
         const imageUrl = MediaUrl0;
         receiptUrl = imageUrl;
 
-        const accountSid = process.env.TWILIO_ACCOUNT_SID!;
-        const authToken = process.env.TWILIO_AUTH_TOKEN!;
-        const authHeader = 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+        const accountSid = process.env.TWILIO_ACCOUNT_SID;
+        const authToken = process.env.TWILIO_AUTH_TOKEN;
+        console.log('🔑 Twilio creds present:', !!accountSid, !!authToken);
 
+        const authHeader = 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64');
         const imageResponse = await fetch(imageUrl, { headers: { Authorization: authHeader } });
+        console.log('🌐 Image fetch status:', imageResponse.status);
         if (!imageResponse.ok) throw new Error(`Failed to fetch image: ${imageResponse.status}`);
 
         const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+        console.log('📦 Image buffer size:', imageBuffer.length);
         const tempPath = path.join('/tmp', `receipt_${Date.now()}.jpg`);
         fs.writeFileSync(tempPath, imageBuffer);
 
         const result = await processReceiptFile(tempPath);
         receiptText = result.text;
+        console.log('✅ OCR complete. Text length:', result.text.length, 'Preview:', result.text.substring(0, 200));
         fs.unlinkSync(tempPath);
 
         const aiParsed = await parseExpenseFromText(result.text, bodyText);
+        console.log('🤖 AI parsed:', JSON.stringify(aiParsed));
         expenseData = { ...expenseData, ...aiParsed };
-        console.log('✅ OCR complete:', result.text.substring(0, 100));
       } catch (error) {
         console.error('❌ OCR error:', error);
       }
