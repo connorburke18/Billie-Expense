@@ -88,7 +88,7 @@ router.post('/webhook', upload.none(), async (req, res) => {
             where: { phoneNumber },
             data: { data: { ...merged, expenseId: expense.id } },
           });
-          const msg = await generateMessage(`Expense logged from a receipt image. ${summaryContext({ ...merged })}. User can update any details if anything looks off.`);
+          const msg = await generateMessage(`Expense logged from a receipt image. ${summaryContext({ ...merged })}.`);
           return reply(msg);
         }
         const msg = await generateMessage('Still no amount found in their reply. Need just the total dollar amount to log this receipt.');
@@ -276,7 +276,7 @@ router.post('/webhook', upload.none(), async (req, res) => {
     });
 
     const msg = await generateMessage(
-      `Expense saved. ${summaryContext({ ...expenseData, time: expenseTime, date: expenseDate })}. User can update any field if needed.`
+      `Expense saved. ${summaryContext({ ...expenseData, time: expenseTime, date: expenseDate })}.`
     );
     return reply(msg);
 
