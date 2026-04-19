@@ -101,27 +101,27 @@ router.post('/webhook', upload.none(), async (req, res) => {
         await (prisma as any).pendingExpense.delete({ where: { phoneNumber } });
       } else if (intent === 'correction') {
         const corrections: any = { ...data };
-        const amountMatch = bodyText.match(/amount\s+is\s+\$?(\d+\.?\d*)/i) || bodyText.match(/\$(\d+\.?\d*)/);
-        const vendorMatch = bodyText.match(/vendor\s+is\s+(.+)/i) || bodyText.match(/merchant\s+is\s+(.+)/i) || bodyText.match(/store\s+is\s+(.+)/i);
-        const dateMatch = bodyText.match(/date\s+is\s+(.+)/i);
-        const timeMatch = bodyText.match(/time\s+is\s+(.+)/i);
-        const descMatch = bodyText.match(/description\s+is\s+(.+)/i) || bodyText.match(/note\s+is\s+(.+)/i) || bodyText.match(/category\s+is\s+(.+)/i);
 
+        const extracted = await parseExpenseFromText(bodyText, '');
+        if (extracted.amount) corrections.amount = extracted.amount;
+        if (extracted.merchant) corrections.merchant = extracted.merchant;
+        if (extracted.description) corrections.description = extracted.description;
+        if (extracted.category) corrections.category = extracted.category;
+        if (extracted.date) corrections.date = extracted.date;
+
+        const amountMatch = bodyText.match(/(?:total|amount|was|is)\s+\$?(\d+\.?\d*)/i) || bodyText.match(/^\$?(\d+\.\d{2})$/);
         if (amountMatch) corrections.amount = parseFloat(amountMatch[1]);
-        if (vendorMatch) corrections.merchant = vendorMatch[1].trim();
-        if (dateMatch) corrections.date = dateMatch[1].trim();
-        if (timeMatch) corrections.time = timeMatch[1].trim();
-        if (descMatch) corrections.description = descMatch[1].trim();
 
         if (data.expenseId) {
           await prisma.expense.update({
             where: { id: data.expenseId },
             data: {
-              amount: corrections.amount ? parseFloat(corrections.amount) : undefined,
-              merchant: corrections.merchant,
-              description: corrections.description,
-              time: corrections.time,
-              date: corrections.date ? new Date(corrections.date) : undefined,
+              ...(corrections.amount && { amount: parseFloat(corrections.amount) }),
+              ...(corrections.merchant && { merchant: corrections.merchant }),
+              ...(corrections.description && { description: corrections.description }),
+              ...(corrections.category && { category: corrections.category }),
+              ...(corrections.time && { time: corrections.time }),
+              ...(corrections.date && { date: new Date(corrections.date) }),
             },
           });
         }
@@ -131,8 +131,9 @@ router.post('/webhook', upload.none(), async (req, res) => {
           data: { data: corrections },
         });
 
+        const updated = data.expenseId ? await prisma.expense.findUnique({ where: { id: data.expenseId } }) : null;
         const msg = await generateMessage(
-          `The user corrected their last expense. Updated details: ${summaryContext(corrections)}. Acknowledge the change casually. Let them know it's updated.`
+          `The user corrected their last expense. The updated record is now: ${JSON.stringify(updated)}. Confirm the update naturally, mentioning the new value they changed.`
         );
         return reply(msg);
       } else if (intent === 'inquiry') {
@@ -142,8 +143,46 @@ router.post('/webhook', upload.none(), async (req, res) => {
         );
         return reply(msg);
       } else {
+        const summaryKeywords = ['summary', 'list', 'show', 'expenses', 'how much', 'total', 'spent', 'history'];
+        const wantsSummary = summaryKeywords.some(k => bodyText.toLowerCase().includes(k));
+
+        if (wantsSummary) {
+          const recent = await prisma.expense.findMany({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+          });
+          const total = recent.reduce((sum, e) => sum + e.amount, 0);
+          const expenseList = recent.map(e => `${e.merchant || e.description}: $${e.amount.toFixed(2)}`).join(', ');
+          const msg = await generateMessage(
+            `The user wants a summary of their expenses. Here are their last ${recent.length} expenses: ${expenseList}. Total: $${total.toFixed(2)}. Give them a clean, natural summary.`
+          );
+          return reply(msg);
+        }
+
         const msg = await generateMessage(
-          `The user said: "${bodyText}". Respond naturally and conversationally as Billie. If it's a question you can answer, answer it. Keep it short.`
+          `The user said: "${bodyText}". Respond naturally and conversationally as Billie. Keep it short.`
+        );
+        return reply(msg);
+      }
+    }
+
+    if (!hasNewImage && bodyText) {
+      const summaryKeywords = ['summary', 'list', 'show', 'expenses', 'how much', 'total', 'spent', 'history', 'what have i'];
+      const wantsSummary = summaryKeywords.some(k => bodyText.toLowerCase().includes(k));
+      if (wantsSummary) {
+        const recent = await prisma.expense.findMany({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        });
+        if (recent.length === 0) {
+          return reply(await generateMessage("The user asked for their expense summary but they haven't logged anything yet. Let them know and encourage them to send their first receipt or expense."));
+        }
+        const total = recent.reduce((sum, e) => sum + e.amount, 0);
+        const expenseList = recent.map(e => `${e.merchant || e.description}: $${e.amount.toFixed(2)}`).join(', ');
+        const msg = await generateMessage(
+          `The user wants a summary of their expenses. Here are their last ${recent.length} expenses: ${expenseList}. Total: $${total.toFixed(2)}. Give them a clean, natural summary.`
         );
         return reply(msg);
       }
