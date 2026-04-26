@@ -328,6 +328,13 @@ router.post('/webhook', upload.none(), async (req, res) => {
         expenseData = { ...expenseData, ...aiParsed };
       } catch (error) {
         console.error('❌ OCR error:', error);
+        const msg = await generateMessage('Receipt image received but I had trouble reading it. Ask the user to send the amount manually.');
+        await (prisma as any).pendingExpense.upsert({
+          where: { phoneNumber },
+          create: { userId: user.id, phoneNumber, data: { receiptUrl, receiptText, awaitingAmount: true } },
+          update: { data: { receiptUrl, receiptText, awaitingAmount: true } },
+        });
+        return reply(msg);
       }
     }
 

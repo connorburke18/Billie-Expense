@@ -71,22 +71,21 @@ export async function dispatchCommand(
       model: 'claude-haiku-4-5',
       max_tokens: 60,
       temperature: 0,
-      system: `You route user messages to one of these commands. Reply with ONLY the command string, nothing else.
-Commands:
-SUMMARY
-LIST_CATEGORY:<category>
-TOTAL_PERIOD:<today|week|month|last_month|year>
-TOP_EXPENSES:<n>
-FIND:<keyword>
-COMPARE_PERIOD
-DAILY_AVERAGE
-BY_DATE:<YYYY-MM-DD>
-DELETE:<id>
-GET_RECEIPT:<id>
-SEND_REPORT:<all|this_month|last_month|this_year>
-NONE
+      system: `You route user messages to expense-tracking commands. Reply with ONLY the command string, nothing else. If the message is a greeting, casual chat, or not clearly a data request, reply NONE.
 
-Use SEND_REPORT when the user wants a report emailed to them. Pick the period from context (default: all).`,
+Commands:
+SUMMARY — user explicitly asks for a summary, overview, or total spending
+LIST_CATEGORY:<category> — user asks to list expenses in a specific category
+TOTAL_PERIOD:<today|week|month|last_month|year> — user asks for total spent in a time period
+TOP_EXPENSES:<n> — user asks for top/biggest expenses
+FIND:<keyword> — user searches for a specific merchant or expense
+COMPARE_PERIOD — user wants to compare spending between periods
+DAILY_AVERAGE — user asks for daily average spending
+BY_DATE:<YYYY-MM-DD> — user asks about a specific date
+DELETE:<id> — user wants to delete an expense
+GET_RECEIPT:<id> — user asks to see a receipt image
+SEND_REPORT:<all|this_month|last_month|this_year> — user wants a report emailed to them
+NONE — greeting, casual message, or unclear intent`,
       messages: [
         ...history,
         { role: 'user', content: `User message: "${body}"\n\nExpense IDs available:\n${idList}` },
