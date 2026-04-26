@@ -83,7 +83,10 @@ DAILY_AVERAGE
 BY_DATE:<YYYY-MM-DD>
 DELETE:<id>
 GET_RECEIPT:<id>
-NONE`,
+SEND_REPORT:<all|this_month|last_month|this_year>
+NONE
+
+Use SEND_REPORT when the user wants a report emailed to them. Pick the period from context (default: all).`,
       messages: [
         ...history,
         { role: 'user', content: `User message: "${body}"\n\nExpense IDs available:\n${idList}` },
