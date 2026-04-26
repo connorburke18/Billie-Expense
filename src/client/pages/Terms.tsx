@@ -25,12 +25,12 @@ export default function Terms() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">1. Acceptance of Terms</h2>
-            <p>By accessing billietracker.com or using Billie's WhatsApp service, you agree to be bound by these Terms of Service. If you do not agree, do not use the service.</p>
+            <p>By accessing billietracker.com or using Billie's SMS service, you agree to be bound by these Terms of Service. If you do not agree, do not use the service.</p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">2. Description of Service</h2>
-            <p>Billie is an AI-powered expense tracking service that allows users to log expenses by sending receipt photos or text messages via WhatsApp, and to view and manage those expenses through a web dashboard at billietracker.com.</p>
+            <p>Billie is an AI-powered expense tracking service that allows users to log expenses by sending receipt photos or text messages via SMS, and to view and manage those expenses through a web dashboard at billietracker.com.</p>
           </section>
 
           <section>
@@ -40,18 +40,18 @@ export default function Terms() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">4. Account Registration</h2>
-            <p>You may create an account by registering at billietracker.com or by initiating a conversation with Billie on WhatsApp. You are responsible for maintaining the security of your account credentials and for all activity that occurs under your account.</p>
+            <p>You may create an account by registering at billietracker.com or by texting Billie. You are responsible for maintaining the security of your account credentials and for all activity that occurs under your account.</p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">5. WhatsApp Messaging Terms</h2>
-            <p>By providing your phone number and using Billie via WhatsApp, you expressly consent to receive automated WhatsApp messages from Billie for the purpose of expense tracking, confirmations, and account notifications.</p>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">5. SMS Messaging Terms</h2>
+            <p>By providing your phone number and using Billie via SMS, you expressly consent to receive automated SMS messages from Billie for the purpose of expense tracking, confirmations, and account notifications.</p>
             <ul className="list-disc pl-5 space-y-2 mt-3">
-              <li><strong>Opt-in:</strong> Consent is given when you create an account at billietracker.com or initiate a WhatsApp conversation with Billie.</li>
+              <li><strong>Opt-in:</strong> Consent is given when you create an account at billietracker.com or initiate an SMS conversation with Billie.</li>
               <li><strong>Opt-out:</strong> You may opt out at any time by replying <strong>STOP</strong> to any Billie message. After opting out, you will receive a single confirmation message and no further messages.</li>
               <li><strong>Help:</strong> Reply <strong>HELP</strong> to any Billie message or email hello@billietracker.com for support.</li>
               <li>Message frequency varies based on your usage of the service.</li>
-              <li>Standard WhatsApp and mobile data rates may apply depending on your carrier plan.</li>
+              <li>Standard message and data rates may apply depending on your carrier plan.</li>
               <li>Billie will never send unsolicited promotional messages unrelated to your expense tracking activity.</li>
             </ul>
           </section>
@@ -63,7 +63,7 @@ export default function Terms() {
               <li>Use the service for any unlawful purpose.</li>
               <li>Attempt to gain unauthorized access to any part of the service.</li>
               <li>Submit false, misleading, or fraudulent expense information.</li>
-              <li>Abuse or spam the WhatsApp messaging system.</li>
+              <li>Abuse or spam the SMS messaging system.</li>
               <li>Reverse engineer or attempt to extract the source code of Billie.</li>
             </ul>
           </section>

@@ -25,7 +25,7 @@ export default function Privacy() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">1. Introduction</h2>
-            <p>Billie ("we", "our", or "us") operates the expense tracking service available at billietracker.com and via WhatsApp messaging. This Privacy Policy explains how we collect, use, and protect your personal information when you use our service.</p>
+            <p>Billie ("we", "our", or "us") operates the expense tracking service available at billietracker.com and via SMS messaging. This Privacy Policy explains how we collect, use, and protect your personal information when you use our service.</p>
             <p className="mt-2">By registering for Billie or sending us a message, you agree to this Privacy Policy.</p>
           </section>
 
@@ -33,10 +33,10 @@ export default function Privacy() {
             <h2 className="text-lg font-semibold text-gray-900 mb-3">2. Information We Collect</h2>
             <ul className="list-disc pl-5 space-y-2">
               <li><strong>Account information:</strong> Name, email address, and password when you register.</li>
-              <li><strong>Phone number:</strong> Your WhatsApp phone number used to send and receive messages.</li>
+              <li><strong>Phone number:</strong> Your mobile phone number used to send and receive SMS messages.</li>
               <li><strong>Expense data:</strong> Amounts, merchants, categories, dates, and descriptions of expenses you submit.</li>
-              <li><strong>Receipt images:</strong> Photos of receipts you send via WhatsApp, stored permanently for your retrieval.</li>
-              <li><strong>Message content:</strong> Text messages sent to Billie via WhatsApp for the purpose of logging and querying expenses.</li>
+              <li><strong>Receipt images:</strong> Photos of receipts you send via SMS, stored permanently for your retrieval.</li>
+              <li><strong>Message content:</strong> Text messages sent to Billie via SMS for the purpose of logging and querying expenses.</li>
             </ul>
           </section>
 
@@ -44,7 +44,7 @@ export default function Privacy() {
             <h2 className="text-lg font-semibold text-gray-900 mb-3">3. How We Use Your Information</h2>
             <ul className="list-disc pl-5 space-y-2">
               <li>To provide the expense tracking service, including parsing receipts and responding to your queries.</li>
-              <li>To send you WhatsApp messages in response to your expense submissions and questions.</li>
+              <li>To send you SMS messages in response to your expense submissions and questions.</li>
               <li>To store and display your expenses on the Billie web dashboard.</li>
               <li>To improve the accuracy and quality of our AI-powered parsing and categorization.</li>
               <li>To contact you about your account at hello@billietracker.com.</li>
@@ -52,13 +52,13 @@ export default function Privacy() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">4. SMS and WhatsApp Messaging</h2>
-            <p>By registering for Billie or texting our WhatsApp number, you consent to receive WhatsApp messages from Billie for the purpose of expense tracking, confirmations, and account-related notifications.</p>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">4. SMS Messaging</h2>
+            <p>By registering for Billie or texting our SMS number, you consent to receive SMS messages from Billie for the purpose of expense tracking, confirmations, and account-related notifications.</p>
             <ul className="list-disc pl-5 space-y-2 mt-3">
-              <li><strong>Opt-in:</strong> You opt in by creating an account on billietracker.com or by initiating a conversation with Billie on WhatsApp.</li>
+              <li><strong>Opt-in:</strong> You opt in by creating an account on billietracker.com or by texting Billie.</li>
               <li><strong>Opt-out:</strong> Reply <strong>STOP</strong> at any time to stop receiving messages from Billie.</li>
               <li><strong>Help:</strong> Reply <strong>HELP</strong> for assistance or contact us at hello@billietracker.com.</li>
-              <li>Message frequency varies based on your usage. Standard WhatsApp data rates may apply.</li>
+              <li>Message frequency varies based on your usage. Message and data rates may apply.</li>
               <li>We do not sell your phone number or message data to third parties for marketing purposes.</li>
             </ul>
           </section>

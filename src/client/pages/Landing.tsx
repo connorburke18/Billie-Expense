@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Receipt, MessageSquare, BarChart2, Image, Shield, ArrowRight } from 'lucide-react';
+import { Receipt, MessageSquare, BarChart2, Image, ArrowRight } from 'lucide-react';
 
 export default function Landing() {
   return (
@@ -27,13 +27,13 @@ export default function Landing() {
       <section className="max-w-4xl mx-auto px-8 py-24 text-center">
         <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
           <MessageSquare className="w-3.5 h-3.5" />
-          WhatsApp-powered expense tracking
+          SMS-powered expense tracking
         </div>
         <h1 className="text-5xl font-bold text-gray-900 leading-tight mb-6">
           Snap a receipt.<br />Billie handles the rest.
         </h1>
         <p className="text-xl text-gray-500 mb-10 max-w-2xl mx-auto">
-          Send a photo of any receipt to Billie on WhatsApp and it automatically logs the expense — no apps, no manual entry.
+          Send a photo of any receipt to Billie via SMS and it automatically logs the expense — no apps, no manual entry.
         </p>
         <div className="flex items-center justify-center gap-4">
           <Link
@@ -55,7 +55,7 @@ export default function Landing() {
             {[
               {
                 icon: MessageSquare,
-                title: 'WhatsApp native',
+                title: 'SMS native',
                 desc: 'Just text Billie a receipt photo or describe an expense in plain English. No new apps to download.',
               },
               {
@@ -85,7 +85,7 @@ export default function Landing() {
         <div className="bg-indigo-600 rounded-3xl p-12 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">Ready to stop losing receipts?</h2>
           <p className="text-indigo-200 mb-8">
-            By signing up you agree to receive WhatsApp messages from Billie for expense tracking purposes.
+            By signing up you agree to receive SMS messages from Billie for expense tracking purposes.
             Reply STOP at any time to opt out. Reply HELP for help.
           </p>
           <Link
