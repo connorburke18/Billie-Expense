@@ -160,6 +160,25 @@ router.post('/webhook', upload.none(), async (req, res) => {
 
       if (data.awaitingAmount) {
         const amountMatch = bodyText.match(/\$?(\d+\.?\d*)/);
+        if (!amountMatch) {
+          await (prisma as any).pendingExpense.delete({ where: { phoneNumber } });
+          pending = null;
+          const result = await executeDispatch(bodyText, [], user.id);
+          if (result !== null) {
+            if (result.startsWith('MEDIA:')) {
+              const [mediaUrl, caption] = result.slice(6).split('|');
+              const twiml = new twilio.twiml.MessagingResponse();
+              const msg = twiml.message(caption || '');
+              msg.media(mediaUrl);
+              res.type('text/xml');
+              return res.send(twiml.toString());
+            }
+            const msg = await generateMessage(`Query result:\n${result}\n\nUser asked: "${bodyText}". Present this data naturally.`);
+            return reply(msg);
+          }
+          const msg = await generateMessage(`User said: "${bodyText}". Respond naturally as Billie.`);
+          return reply(msg);
+        }
         if (amountMatch) {
           const updatedData = { ...data, amount: parseFloat(amountMatch[1]), awaitingAmount: false };
           const aiParsed = await parseExpenseFromText(data.receiptText || '', bodyText);
