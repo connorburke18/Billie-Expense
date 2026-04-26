@@ -65,13 +65,7 @@ export default function Privacy() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">5. Data Sharing</h2>
-            <p>We do not sell your personal information. We share data only with the following service providers who help us operate Billie:</p>
-            <ul className="list-disc pl-5 space-y-2 mt-3">
-              <li><strong>Twilio:</strong> For WhatsApp message delivery.</li>
-              <li><strong>Anthropic:</strong> For AI-powered message parsing and categorization. Receipt text may be sent to Anthropic's API.</li>
-              <li><strong>Cloudinary:</strong> For secure storage of receipt images.</li>
-              <li><strong>Railway:</strong> For hosting the Billie application and database.</li>
-            </ul>
+            <p>We do not sell your personal information. We share data only with third-party service providers necessary to operate Billie, including providers for message delivery, AI-powered parsing, image storage, and application hosting. These providers are contractually obligated to protect your data and may not use it for their own purposes.</p>
           </section>
 
           <section>
