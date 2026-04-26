@@ -6,7 +6,7 @@ description: Promote staging to production (merge staging -> main and push)
 // turbo
 2. Run the promote script
 ```
-git checkout main && git merge staging --no-edit && git push origin main && git checkout staging
+git checkout main; git merge staging --no-edit; git push origin main; git checkout staging
 ```
 
 This will:

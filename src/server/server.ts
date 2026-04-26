@@ -7,6 +7,7 @@ import expenseRoutes from './routes/expenses';
 import twilioRoutes from './routes/twilio';
 import categoryRoutes from './routes/categories';
 import statsRoutes from './routes/stats';
+import reportsRoutes from './routes/reports';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/twilio', twilioRoutes);
+app.use('/api/reports', reportsRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { expenseApi, statsApi, Expense, Stats } from '../lib/api';
+import { expenseApi, statsApi, reportsApi, Expense, Stats } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/utils';
 import {
   Receipt, TrendingUp, LogOut, Search, Trash2, Image, X,
-  LayoutDashboard, ChevronDown, Calendar, Tag,
-  // TrendingUp used in navItems below
+  LayoutDashboard, ChevronDown, Calendar, Tag, Download, Mail,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -47,6 +46,9 @@ function ExpenseList() {
   const [categories, setCategories] = useState<string[]>([]);
   const [receiptModal, setReceiptModal] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [emailing, setEmailing] = useState(false);
+  const [emailMsg, setEmailMsg] = useState<string | null>(null);
 
   const loadExpenses = useCallback(async () => {
     setLoading(true);
@@ -92,6 +94,45 @@ function ExpenseList() {
         <ReceiptModal url={receiptModal} onClose={() => setReceiptModal(null)} />
       )}
 
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div className="flex gap-2">
+          <button
+            onClick={async () => { setExporting(true); try { await reportsApi.downloadCsv(); } finally { setExporting(false); } }}
+            disabled={exporting}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 disabled:opacity-50"
+          >
+            <Download className="w-3.5 h-3.5" />
+            {exporting ? 'Exporting...' : 'CSV'}
+          </button>
+          <div className="relative">
+            <button
+              onClick={async () => {
+                setEmailing(true);
+                setEmailMsg(null);
+                try {
+                  const res = await reportsApi.emailReport();
+                  setEmailMsg(res.message);
+                } catch {
+                  setEmailMsg('Failed to send report.');
+                } finally {
+                  setEmailing(false);
+                  setTimeout(() => setEmailMsg(null), 5000);
+                }
+              }}
+              disabled={emailing}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 disabled:opacity-50"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              {emailing ? 'Sending...' : 'Email report'}
+            </button>
+            {emailMsg && (
+              <div className="absolute top-10 left-0 z-10 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap shadow-lg">
+                {emailMsg}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />

@@ -11,6 +11,7 @@ import {
   querySummary, queryListCategory, queryTotalPeriod, queryTopExpenses,
   queryFind, queryComparePeriod, queryDailyAverage, queryByDate, queryDelete, queryGetReceipt,
 } from '../services/queries';
+import { sendExpenseReport } from '../services/email';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -18,6 +19,21 @@ const prisma = new PrismaClient();
 const upload = multer({ dest: 'uploads/' });
 
 async function executeDispatch(bodyText: string, history: { role: 'user' | 'assistant'; content: string }[], userId: string): Promise<string | null> {
+  const lower = bodyText.toLowerCase();
+  if (lower.includes('send report') || lower.includes('email report') || lower.includes('email me') || lower.includes('send me my')) {
+    let period: string | undefined;
+    if (lower.includes('this month')) period = 'this_month';
+    else if (lower.includes('last month')) period = 'last_month';
+    else if (lower.includes('this year')) period = 'this_year';
+    try {
+      const result = await sendExpenseReport(userId, period);
+      if (result.success) return `Report sent! Check your email — it includes ${result.count} expense${result.count === 1 ? '' : 's'}.`;
+      return result.message || 'No expenses found for that period.';
+    } catch {
+      return 'Sorry, I had trouble sending the report. Try again in a moment.';
+    }
+  }
+
   const allExpenses = await prisma.expense.findMany({
     where: { userId },
     orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],

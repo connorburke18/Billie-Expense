@@ -127,4 +127,22 @@ export const statsApi = {
   },
 };
 
+export const reportsApi = {
+  emailReport: async (period?: string) => {
+    const response = await api.post('/reports/email', { period });
+    return response.data;
+  },
+  downloadCsv: async (params?: { startDate?: string; endDate?: string; category?: string }) => {
+    const response = await api.get('/reports/csv', { params, responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `billie-expenses-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+};
+
 export default api;
