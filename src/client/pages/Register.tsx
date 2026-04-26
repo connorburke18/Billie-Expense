@@ -25,7 +25,7 @@ export default function Register() {
       let phone = formData.phoneNumber.trim();
       if (phone && !phone.startsWith('+')) phone = '+1' + phone;
       await register({ ...formData, phoneNumber: phone });
-      navigate('/');
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Registration failed');
     } finally {

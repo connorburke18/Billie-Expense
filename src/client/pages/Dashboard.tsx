@@ -291,8 +291,8 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   const navItems = [
-    { path: '/', label: 'Expenses', icon: LayoutDashboard },
-    { path: '/stats', label: 'Statistics', icon: TrendingUp },
+    { path: '/dashboard', label: 'Expenses', icon: LayoutDashboard },
+    { path: '/dashboard/stats', label: 'Statistics', icon: TrendingUp },
   ];
 
   return (
@@ -329,7 +329,7 @@ export default function Dashboard() {
             {user?.firstName ? `${user.firstName}` : user?.email}
           </div>
           <button
-            onClick={() => { logout(); navigate('/login'); }}
+            onClick={() => { logout(); navigate('/'); }}
             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
           >
             <LogOut className="w-4 h-4" />
@@ -342,10 +342,10 @@ export default function Dashboard() {
         <div className="max-w-5xl mx-auto">
           <div className="mb-7">
             <h1 className="text-2xl font-bold text-gray-900">
-              {location.pathname === '/stats' ? 'Statistics' : 'Expenses'}
+              {location.pathname === '/dashboard/stats' ? 'Statistics' : 'Expenses'}
             </h1>
             <p className="text-sm text-gray-400 mt-0.5">
-              {location.pathname === '/stats'
+              {location.pathname === '/dashboard/stats'
                 ? 'Overview of your spending patterns'
                 : 'All expenses logged via WhatsApp'}
             </p>
@@ -353,6 +353,7 @@ export default function Dashboard() {
           <Routes>
             <Route path="/" element={<ExpenseList />} />
             <Route path="/stats" element={<StatsOverview />} />
+            <Route path="" element={<ExpenseList />} />
           </Routes>
         </div>
       </div>

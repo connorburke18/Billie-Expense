@@ -3,6 +3,9 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Landing from './pages/Landing';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -29,7 +32,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return !user ? <>{children}</> : <Navigate to="/" />;
+  return !user ? <>{children}</> : <Navigate to="/dashboard" />;
 }
 
 function App() {
@@ -37,6 +40,9 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
           <Route
             path="/login"
             element={
@@ -54,13 +60,14 @@ function App() {
             }
           />
           <Route
-            path="/*"
+            path="/dashboard/*"
             element={
               <PrivateRoute>
                 <Dashboard />
               </PrivateRoute>
             }
           />
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
