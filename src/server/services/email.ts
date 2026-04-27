@@ -157,8 +157,13 @@ async function buildExcelBuffer(expenses: any[], periodLabel: string): Promise<B
     });
     if (e.receiptUrl) {
       const cell = row.getCell('receiptUrl');
-      cell.value = { text: 'View Receipt', hyperlink: e.receiptUrl };
-      cell.font = { color: { argb: 'FF4F46E5' }, underline: true };
+      const isCloudinary = e.receiptUrl.includes('cloudinary.com') || e.receiptUrl.includes('res.cloudinary');
+      if (isCloudinary) {
+        cell.value = { text: 'View Receipt', hyperlink: e.receiptUrl };
+        cell.font = { color: { argb: 'FF4F46E5' }, underline: true };
+      } else {
+        cell.value = '';
+      }
     }
   }
 
