@@ -13,8 +13,12 @@ export default function ForgotPassword() {
     setError('');
     setLoading(true);
     try {
-      await axios.post('/api/auth/forgot-password', { email });
-      setSubmitted(true);
+      const res = await axios.post('/api/auth/forgot-password', { email });
+      if (res.data?.success) {
+        setSubmitted(true);
+      } else {
+        setError(res.data?.error || 'Something went wrong');
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Something went wrong');
     } finally {

@@ -135,7 +135,7 @@ router.post('/forgot-password', async (req, res) => {
 
     const resetUrl = `${process.env.APP_URL || 'https://www.billietracker.com'}/reset-password?token=${token}`;
 
-    await resend.emails.send({
+    const { data: emailData, error: emailError } = await resend.emails.send({
       from: 'Billie <hello@billietracker.com>',
       to: user.email,
       subject: 'Reset your Billie password',
@@ -156,6 +156,12 @@ router.post('/forgot-password', async (req, res) => {
       `,
     });
 
+    if (emailError) {
+      console.error('Resend error sending reset email:', JSON.stringify(emailError));
+      return res.status(500).json({ error: `Email send failed: ${emailError.message}` });
+    }
+
+    console.log('Reset email sent:', emailData?.id, 'to:', user.email);
     res.json({ success: true });
   } catch (error) {
     console.error('Forgot password error:', error);
