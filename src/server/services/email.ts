@@ -132,6 +132,7 @@ async function buildExcelBuffer(expenses: any[], periodLabel: string): Promise<B
     { header: 'Currency', key: 'currency', width: 10 },
     { header: 'Notes', key: 'notes', width: 28 },
     { header: 'Source', key: 'source', width: 10 },
+    { header: 'Receipt URL', key: 'receiptUrl', width: 50 },
     { header: 'Logged At', key: 'createdAt', width: 18 },
   ];
 
@@ -142,7 +143,7 @@ async function buildExcelBuffer(expenses: any[], periodLabel: string): Promise<B
   headerRow.height = 20;
 
   for (const e of expenses) {
-    sheet.addRow({
+    const row = sheet.addRow({
       date: new Date(e.date).toLocaleDateString('en-US'),
       merchant: e.merchant || '',
       description: e.description || '',
@@ -151,8 +152,14 @@ async function buildExcelBuffer(expenses: any[], periodLabel: string): Promise<B
       currency: e.currency || 'USD',
       notes: e.notes || '',
       source: e.source || '',
+      receiptUrl: e.receiptUrl || '',
       createdAt: new Date(e.createdAt).toLocaleString('en-US'),
     });
+    if (e.receiptUrl) {
+      const cell = row.getCell('receiptUrl');
+      cell.value = { text: 'View Receipt', hyperlink: e.receiptUrl };
+      cell.font = { color: { argb: 'FF4F46E5' }, underline: true };
+    }
   }
 
   sheet.getColumn('amount').numFmt = '"$"#,##0.00';
@@ -164,7 +171,7 @@ async function buildExcelBuffer(expenses: any[], periodLabel: string): Promise<B
   totalRow.getCell('date').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F3FF' } };
   totalRow.getCell('amount').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F3FF' } };
 
-  sheet.autoFilter = { from: 'A1', to: 'I1' };
+  sheet.autoFilter = { from: 'A1', to: 'J1' };
 
   const summarySheet = workbook.addWorksheet('Summary');
   summarySheet.columns = [
