@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Receipt } from 'lucide-react';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -34,47 +33,39 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <div className="hidden lg:flex lg:w-1/2 bg-indigo-600 flex-col justify-between p-12">
-        <div className="flex items-center gap-3">
-          <div className="bg-white/20 p-2 rounded-xl">
-            <Receipt className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-xl font-bold text-white">Billie</span>
-        </div>
+    <div className="min-h-screen bg-white flex" style={{ fontFamily: "'Inter', 'DM Sans', system-ui, sans-serif" }}>
+      <div className="hidden lg:flex lg:w-1/2 bg-[#0a0a0a] flex-col justify-between p-12">
+        <span className="text-base font-black tracking-widest uppercase text-white">Billie</span>
         <div>
-          <h2 className="text-4xl font-bold text-white leading-tight mb-4">
+          <h2 className="text-5xl font-black text-white leading-tight tracking-tight mb-4">
             Track smarter,<br />spend better.
           </h2>
-          <p className="text-indigo-200 text-lg">
-            Snap a receipt on WhatsApp. Billie logs it instantly.
+          <p className="text-white/50 text-base">
+            Snap a receipt via SMS. Billie logs it instantly.
           </p>
         </div>
-        <p className="text-indigo-300 text-sm">billietracker.com</p>
+        <p className="text-white/30 text-sm">billietracker.com</p>
       </div>
 
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="max-w-sm w-full">
-          <div className="lg:hidden flex items-center gap-2 mb-10">
-            <div className="bg-indigo-600 p-2 rounded-xl">
-              <Receipt className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-lg font-bold text-gray-900">Billie</span>
+          <div className="lg:hidden mb-10">
+            <span className="text-base font-black tracking-widest uppercase text-[#0a0a0a]">Billie</span>
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Create account</h1>
-          <p className="text-gray-400 text-sm mb-8">Start tracking your expenses today</p>
+          <h1 className="text-2xl font-black text-[#0a0a0a] mb-1 tracking-tight">Create account</h1>
+          <p className="text-[#888] text-sm mb-8">Start tracking your expenses today</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm">
+              <div className="border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">
                 {error}
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor="firstName" className="block text-xs font-semibold uppercase tracking-wider text-[#0a0a0a] mb-1.5">
                   First name
                 </label>
                 <input
@@ -82,12 +73,12 @@ export default function Register() {
                   type="text"
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-3 border border-gray-300 text-sm focus:outline-none focus:border-[#0a0a0a] transition-colors"
                   placeholder="Connor"
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor="lastName" className="block text-xs font-semibold uppercase tracking-wider text-[#0a0a0a] mb-1.5">
                   Last name
                 </label>
                 <input
@@ -95,14 +86,14 @@ export default function Register() {
                   type="text"
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-3 border border-gray-300 text-sm focus:outline-none focus:border-[#0a0a0a] transition-colors"
                   placeholder="Burke"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider text-[#0a0a0a] mb-1.5">
                 Email
               </label>
               <input
@@ -111,27 +102,27 @@ export default function Register() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 border border-gray-300 text-sm focus:outline-none focus:border-[#0a0a0a] transition-colors"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1.5">
-                WhatsApp number
+              <label htmlFor="phoneNumber" className="block text-xs font-semibold uppercase tracking-wider text-[#0a0a0a] mb-1.5">
+                Phone number
               </label>
               <input
                 id="phoneNumber"
                 type="tel"
                 value={formData.phoneNumber}
                 onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 border border-gray-300 text-sm focus:outline-none focus:border-[#0a0a0a] transition-colors"
                 placeholder="+11234567890"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider text-[#0a0a0a] mb-1.5">
                 Password
               </label>
               <input
@@ -141,7 +132,7 @@ export default function Register() {
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
                 minLength={6}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 border border-gray-300 text-sm focus:outline-none focus:border-[#0a0a0a] transition-colors"
                 placeholder="••••••••"
               />
             </div>
@@ -149,15 +140,15 @@ export default function Register() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              className="w-full bg-[#0a0a0a] text-white py-3 text-sm font-semibold hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed mt-2"
             >
               {loading ? 'Creating account...' : 'Create account'}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-500">
+          <p className="mt-6 text-center text-sm text-[#888]">
             Already have an account?{' '}
-            <Link to="/login" className="text-indigo-600 hover:text-indigo-700 font-semibold">
+            <Link to="/login" className="text-[#0a0a0a] font-semibold underline underline-offset-4 hover:opacity-60">
               Sign in
             </Link>
           </p>
