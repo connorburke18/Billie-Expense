@@ -35,7 +35,7 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-white flex">
       <div className="hidden lg:flex lg:w-1/2 bg-[#0a0a0a] flex-col justify-between p-12">
-        <span className="text-base font-black tracking-widest uppercase text-white">Billie</span>
+        <Link to="/" className="text-base font-black tracking-widest uppercase text-white hover:opacity-60 transition-opacity">Billie</Link>
         <div>
           <h2 className="text-5xl font-black text-white leading-tight tracking-tight mb-4">
             Track smarter,<br />spend better.
@@ -50,7 +50,7 @@ export default function Register() {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="max-w-sm w-full">
           <div className="lg:hidden mb-10">
-            <span className="text-base font-black tracking-widest uppercase text-[#0a0a0a]">Billie</span>
+            <Link to="/" className="text-base font-black tracking-widest uppercase text-[#0a0a0a] hover:opacity-60 transition-opacity">Billie</Link>
           </div>
 
           <h1 className="text-2xl font-black text-[#0a0a0a] mb-1 tracking-tight">Create account</h1>

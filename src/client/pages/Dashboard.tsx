@@ -340,12 +340,12 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50 flex">
       <aside className="w-56 bg-white border-r border-gray-100 flex flex-col fixed h-full z-10">
         <div className="p-5 border-b border-gray-100">
-          <div className="flex items-center gap-2.5">
+          <Link to="/" className="flex items-center gap-2.5 hover:opacity-70 transition-opacity">
             <div className="bg-indigo-600 p-2 rounded-xl">
               <Receipt className="w-5 h-5 text-white" />
             </div>
             <span className="text-lg font-bold text-gray-900">Billie</span>
-          </div>
+          </Link>
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
