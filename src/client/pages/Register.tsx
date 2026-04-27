@@ -74,7 +74,7 @@ export default function Register() {
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 text-sm focus:outline-none focus:border-[#0a0a0a] transition-colors"
-                  placeholder="Connor"
+                  placeholder="Jane"
                 />
               </div>
               <div>
@@ -87,7 +87,7 @@ export default function Register() {
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 text-sm focus:outline-none focus:border-[#0a0a0a] transition-colors"
-                  placeholder="Burke"
+                  placeholder="Smith"
                 />
               </div>
             </div>
@@ -149,7 +149,7 @@ export default function Register() {
                   value={formData.phoneNumber}
                   onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                   className="flex-1 px-4 py-3 border border-gray-300 text-sm focus:outline-none focus:border-[#0a0a0a] transition-colors"
-                  placeholder="2125551234"
+                  placeholder="(999) 888-7777"
                 />
               </div>
             </div>
