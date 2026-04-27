@@ -44,7 +44,7 @@ export default function ResetPassword() {
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-8">
       <div className="max-w-sm w-full">
-        <Link to="/" className="text-sm font-black tracking-widest uppercase text-[#0a0a0a] block mb-12">
+        <Link to="/" className="text-2xl font-black tracking-widest uppercase text-[#0a0a0a] block mb-12">
           Billie
         </Link>
 

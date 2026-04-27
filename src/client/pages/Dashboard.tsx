@@ -344,7 +344,7 @@ export default function Dashboard() {
             <div className="bg-indigo-600 p-2 rounded-xl">
               <Receipt className="w-5 h-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-gray-900">Billie</span>
+            <span className="text-xl font-bold text-gray-900">Billie</span>
           </Link>
         </div>
 

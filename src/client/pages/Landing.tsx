@@ -5,7 +5,7 @@ export default function Landing() {
     <div className="min-h-screen bg-white">
       {/* Nav */}
       <nav className="flex items-center justify-between px-8 py-4 border-b border-gray-200">
-        <span className="text-sm font-black tracking-widest uppercase text-[#0a0a0a]">Billie</span>
+        <span className="text-xl font-black tracking-widest uppercase text-[#0a0a0a]">Billie</span>
         <div className="flex items-center gap-5">
           <Link to="/login" className="text-sm font-medium text-[#0a0a0a] hover:opacity-60 transition-opacity whitespace-nowrap">
             Sign in
