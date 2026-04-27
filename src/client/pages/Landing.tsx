@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', 'DM Sans', system-ui, sans-serif" }}>
+    <div className="min-h-screen bg-white">
       {/* Nav */}
       <nav className="flex items-center justify-between px-8 py-5 border-b border-gray-200">
         <span className="text-base font-black tracking-widest uppercase text-[#0a0a0a]">Billie</span>

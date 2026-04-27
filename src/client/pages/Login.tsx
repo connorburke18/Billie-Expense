@@ -26,7 +26,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex" style={{ fontFamily: "'Inter', 'DM Sans', system-ui, sans-serif" }}>
+    <div className="min-h-screen bg-white flex">
       <div className="hidden lg:flex lg:w-1/2 bg-[#0a0a0a] flex-col justify-between p-12">
         <span className="text-base font-black tracking-widest uppercase text-white">Billie</span>
         <div>
