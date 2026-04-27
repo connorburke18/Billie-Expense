@@ -112,8 +112,8 @@ function ExpenseList() {
                 try {
                   const res = await reportsApi.emailReport();
                   setEmailMsg(res.message);
-                } catch {
-                  setEmailMsg('Failed to send report.');
+                } catch (err: any) {
+                  setEmailMsg(err?.response?.data?.error || err?.message || 'Failed to send report.');
                 } finally {
                   setEmailing(false);
                   setTimeout(() => setEmailMsg(null), 5000);

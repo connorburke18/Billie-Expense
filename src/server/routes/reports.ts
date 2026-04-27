@@ -15,8 +15,8 @@ router.post('/email', authenticate, async (req: AuthRequest, res) => {
     }
     res.json({ success: true, message: `Report sent to your email (${result.count} expenses).` });
   } catch (error: any) {
-    console.error('Email report error:', error);
-    res.status(500).json({ error: error.message || 'Failed to send report' });
+    console.error('Email report error:', JSON.stringify(error));
+    res.status(500).json({ error: error.message || JSON.stringify(error) || 'Failed to send report' });
   }
 });
 

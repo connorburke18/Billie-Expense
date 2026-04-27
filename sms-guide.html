@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Billie SMS Guide</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f3ff;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 24px;
+      width: 480px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(79,70,229,0.15);
+    }
+
+    .header {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      padding: 32px 32px 28px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .logo-text {
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+
+    .header-sub {
+      color: #c7d2fe;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .body {
+      padding: 28px 32px 32px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #9ca3af;
+      margin-bottom: 12px;
+      margin-top: 24px;
+    }
+
+    .section-label:first-child {
+      margin-top: 0;
+    }
+
+    .command-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .command {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    .command-icon {
+      font-size: 18px;
+      line-height: 1;
+      margin-top: 1px;
+      flex-shrink: 0;
+    }
+
+    .command-text {
+      flex: 1;
+    }
+
+    .command-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 2px;
+    }
+
+    .command-example {
+      font-size: 12px;
+      color: #6b7280;
+      font-style: italic;
+    }
+
+    .command-example span {
+      background: #ede9fe;
+      color: #4f46e5;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-style: normal;
+      font-weight: 500;
+      font-size: 11.5px;
+    }
+
+    .tip-box {
+      background: #f5f3ff;
+      border: 1px solid #e0e7ff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-top: 24px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .tip-icon { font-size: 18px; flex-shrink: 0; }
+
+    .tip-text {
+      font-size: 12.5px;
+      color: #4338ca;
+      line-height: 1.5;
+    }
+
+    .tip-text strong { font-weight: 600; }
+
+    .footer {
+      border-top: 1px solid #f3f4f6;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-url {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .footer-url strong { color: #4f46e5; }
+
+    .badge {
+      background: #ecfdf5;
+      color: #059669;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid #d1fae5;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">💸</div>
+        <span class="logo-text">Billie</span>
+      </div>
+      <div class="header-sub">Your AI expense tracker via SMS. Just text — no app needed.</div>
+    </div>
+
+    <div class="body">
+
+      <div class="section-label">Log Expenses</div>
+      <div class="command-list">
+        <div class="command">
+          <div class="command-icon">📷</div>
+          <div class="command-text">
+            <div class="command-title">Send a receipt photo</div>
+            <div class="command-example">Billie reads it and logs it automatically</div>
+          </div>
+        </div>
+        <div class="command">
+          <div class="command-icon">✏️</div>
+          <div class="command-text">
+            <div class="command-title">Describe an expense</div>
+            <div class="command-example"><span>Coffee $4.50</span> &nbsp;or&nbsp; <span>Uber $18 last night</span></div>
+          </div>
+        </div>
+        <div class="command">
+          <div class="command-icon">✅</div>
+          <div class="command-text">
+            <div class="command-title">Correct the last expense</div>
+            <div class="command-example"><span>Actually it was $22</span> &nbsp;or&nbsp; <span>Change category to Food</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Query Your Spending</div>
+      <div class="command-list">
+        <div class="command">
+          <div class="command-icon">📊</div>
+          <div class="command-text">
+            <div class="command-title">Get a summary</div>
+            <div class="command-example"><span>How much have I spent?</span> &nbsp;or&nbsp; <span>Summary</span></div>
+          </div>
+        </div>
+        <div class="command">
+          <div class="command-icon">📅</div>
+          <div class="command-text">
+            <div class="command-title">Spending by period</div>
+            <div class="command-example"><span>How much this month?</span> &nbsp;or&nbsp; <span>Total last week</span></div>
+          </div>
+        </div>
+        <div class="command">
+          <div class="command-icon">🏷️</div>
+          <div class="command-text">
+            <div class="command-title">Browse by category</div>
+            <div class="command-example"><span>Show my Food expenses</span> &nbsp;or&nbsp; <span>List Travel</span></div>
+          </div>
+        </div>
+        <div class="command">
+          <div class="command-icon">🔍</div>
+          <div class="command-text">
+            <div class="command-title">Find an expense</div>
+            <div class="command-example"><span>Find Starbucks</span> &nbsp;or&nbsp; <span>Search Amazon</span></div>
+          </div>
+        </div>
+        <div class="command">
+          <div class="command-icon">🏆</div>
+          <div class="command-text">
+            <div class="command-title">Top expenses</div>
+            <div class="command-example"><span>What are my top 5 expenses?</span></div>
+          </div>
+        </div>
+        <div class="command">
+          <div class="command-icon">📈</div>
+          <div class="command-text">
+            <div class="command-title">Compare periods</div>
+            <div class="command-example"><span>Compare this month vs last month</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Reports & Management</div>
+      <div class="command-list">
+        <div class="command">
+          <div class="command-icon">📧</div>
+          <div class="command-text">
+            <div class="command-title">Email a report</div>
+            <div class="command-example"><span>Email me my report</span> &nbsp;or&nbsp; <span>Send this month's report</span></div>
+          </div>
+        </div>
+        <div class="command">
+          <div class="command-icon">🗑️</div>
+          <div class="command-text">
+            <div class="command-title">Delete an expense</div>
+            <div class="command-example"><span>Delete my last Uber</span> &nbsp;or&nbsp; <span>Remove the $4.50 coffee</span></div>
+          </div>
+        </div>
+        <div class="command">
+          <div class="command-icon">🧾</div>
+          <div class="command-text">
+            <div class="command-title">View a receipt</div>
+            <div class="command-example"><span>Show receipt for my last expense</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip-box">
+        <div class="tip-icon">💡</div>
+        <div class="tip-text"><strong>Just talk naturally.</strong> Billie understands plain English — no keywords required. You can also download CSV exports and view your full dashboard at <strong>billietracker.com</strong>.</div>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      <div class="footer-url">Dashboard: <strong>billietracker.com</strong></div>
+      <div class="badge">SMS Powered</div>
+    </div>
+  </div>
+</body>
+</html>
