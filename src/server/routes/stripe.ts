@@ -107,7 +107,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   const sig = req.headers['stripe-signature'] as string;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 
-  let event: Stripe.Event;
+  let event: any;
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err) {
@@ -117,7 +117,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
   try {
     if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session;
+      const session = event.data.object as any;
       const { userId, plan, seats } = session.metadata || {};
       if (userId && plan) {
         await prisma.user.update({
@@ -133,7 +133,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     }
 
     if (event.type === 'customer.subscription.deleted') {
-      const sub = event.data.object as Stripe.Subscription;
+      const sub = event.data.object as any;
       const user = await prisma.user.findFirst({ where: { stripeSubscriptionId: sub.id } });
       if (user) {
         await prisma.user.update({
@@ -144,7 +144,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     }
 
     if (event.type === 'customer.subscription.updated') {
-      const sub = event.data.object as Stripe.Subscription;
+      const sub = event.data.object as any;
       const user = await prisma.user.findFirst({ where: { stripeSubscriptionId: sub.id } });
       if (user && sub.status !== 'active') {
         await prisma.user.update({
