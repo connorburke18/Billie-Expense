@@ -18,8 +18,13 @@ model User {
   updatedAt          DateTime  @updatedAt
   expenses           Expense[]
   categories         Category[]
-  resetToken         String?
-  resetTokenExpiry   DateTime?
+  resetToken           String?
+  resetTokenExpiry     DateTime?
+  plan                 String    @default("free")
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  seats                Int       @default(1)
+  billingCycleStart    DateTime?
 }
 
 model Expense {

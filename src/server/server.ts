@@ -9,6 +9,7 @@ import twilioRoutes from './routes/twilio';
 import categoryRoutes from './routes/categories';
 import statsRoutes from './routes/stats';
 import reportsRoutes from './routes/reports';
+import stripeRoutes from './routes/stripe';
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
+app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -28,6 +30,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/twilio', twilioRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/stripe', stripeRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

@@ -117,6 +117,30 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.get('/me', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'No token' });
+    const { userId } = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'Not found' });
+
+    const cycleStart = user.billingCycleStart || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const expenseCount = await prisma.expense.count({
+      where: { userId, createdAt: { gte: cycleStart } },
+    });
+
+    res.json({
+      plan: user.plan,
+      seats: user.seats,
+      expenseCount,
+      stripeCustomerId: user.stripeCustomerId,
+    });
+  } catch {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;

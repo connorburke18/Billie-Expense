@@ -5,7 +5,7 @@ import { expenseApi, statsApi, reportsApi, Expense, Stats } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/utils';
 import {
   Receipt, TrendingUp, LogOut, Search, Trash2, Image, X,
-  LayoutDashboard, ChevronDown, Calendar, Tag, Download, Mail,
+  LayoutDashboard, ChevronDown, Calendar, Tag, Download, Mail, CreditCard,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -326,6 +326,42 @@ function StatsOverview() {
   );
 }
 
+const PLAN_LIMITS: Record<string, number> = { free: 5, solo: 100, pro: 500, business: 500 };
+const PLAN_LABELS: Record<string, string> = { free: 'Free', solo: 'Solo', pro: 'Pro', business: 'Business' };
+
+function PlanWidget() {
+  const [info, setInfo] = useState<{ plan: string; expenseCount: number; seats: number } | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then(setInfo)
+      .catch(() => {});
+  }, []);
+
+  if (!info) return null;
+
+  const limit = PLAN_LIMITS[info.plan] ?? 5;
+  const pct = Math.min(100, Math.round((info.expenseCount / limit) * 100));
+
+  return (
+    <div className="px-3 py-3 mb-2 border border-gray-200">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs font-semibold uppercase tracking-wider text-[#0a0a0a]">{PLAN_LABELS[info.plan]}</span>
+        <Link to="/pricing" className="text-xs text-[#888] hover:text-[#0a0a0a] transition-colors">
+          {info.plan === 'free' ? 'Upgrade' : 'Manage'}
+        </Link>
+      </div>
+      <div className="w-full h-1 bg-gray-100 mb-1">
+        <div className="h-1 bg-[#0a0a0a] transition-all" style={{ width: `${pct}%` }} />
+      </div>
+      <p className="text-xs text-[#888]">{info.expenseCount} / {limit} expenses</p>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -334,6 +370,7 @@ export default function Dashboard() {
   const navItems = [
     { path: '/dashboard', label: 'Expenses', icon: LayoutDashboard },
     { path: '/dashboard/stats', label: 'Statistics', icon: TrendingUp },
+    { path: '/pricing', label: 'Upgrade', icon: CreditCard },
   ];
 
   return (
@@ -363,6 +400,7 @@ export default function Dashboard() {
         </nav>
 
         <div className="p-3 border-t border-gray-200">
+          <PlanWidget />
           <div className="px-3 py-2 text-xs text-[#888] truncate mb-1">
             {user?.firstName ? `${user.firstName}` : user?.email}
           </div>
