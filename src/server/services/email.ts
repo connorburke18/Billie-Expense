@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { PrismaClient } from '@prisma/client';
+import ExcelJS from 'exceljs';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const prisma = new PrismaClient();
@@ -115,6 +116,82 @@ function buildSummaryHtml(expenses: any[], user: any, period?: string) {
 </html>`;
 }
 
+async function buildExcelBuffer(expenses: any[], periodLabel: string): Promise<Buffer> {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Billie';
+  workbook.created = new Date();
+
+  const sheet = workbook.addWorksheet('Expenses');
+
+  sheet.columns = [
+    { header: 'Date', key: 'date', width: 14 },
+    { header: 'Merchant', key: 'merchant', width: 24 },
+    { header: 'Description', key: 'description', width: 32 },
+    { header: 'Category', key: 'category', width: 18 },
+    { header: 'Amount', key: 'amount', width: 12 },
+    { header: 'Currency', key: 'currency', width: 10 },
+    { header: 'Notes', key: 'notes', width: 28 },
+    { header: 'Source', key: 'source', width: 10 },
+    { header: 'Logged At', key: 'createdAt', width: 18 },
+  ];
+
+  const headerRow = sheet.getRow(1);
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+  headerRow.alignment = { vertical: 'middle' };
+  headerRow.height = 20;
+
+  for (const e of expenses) {
+    sheet.addRow({
+      date: new Date(e.date).toLocaleDateString('en-US'),
+      merchant: e.merchant || '',
+      description: e.description || '',
+      category: e.category || 'Uncategorized',
+      amount: e.amount,
+      currency: e.currency || 'USD',
+      notes: e.notes || '',
+      source: e.source || '',
+      createdAt: new Date(e.createdAt).toLocaleString('en-US'),
+    });
+  }
+
+  sheet.getColumn('amount').numFmt = '"$"#,##0.00';
+
+  const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalRow = sheet.addRow({ date: 'TOTAL', amount: total });
+  totalRow.font = { bold: true };
+  totalRow.getCell('amount').numFmt = '"$"#,##0.00';
+  totalRow.getCell('date').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F3FF' } };
+  totalRow.getCell('amount').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F3FF' } };
+
+  sheet.autoFilter = { from: 'A1', to: 'I1' };
+
+  const summarySheet = workbook.addWorksheet('Summary');
+  summarySheet.columns = [
+    { header: 'Category', key: 'category', width: 22 },
+    { header: 'Total', key: 'total', width: 14 },
+    { header: 'Count', key: 'count', width: 10 },
+  ];
+  const sumHeader = summarySheet.getRow(1);
+  sumHeader.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  sumHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+
+  const byCategory: Record<string, { total: number; count: number }> = {};
+  for (const e of expenses) {
+    const cat = e.category || 'Uncategorized';
+    if (!byCategory[cat]) byCategory[cat] = { total: 0, count: 0 };
+    byCategory[cat].total += e.amount;
+    byCategory[cat].count += 1;
+  }
+  Object.entries(byCategory).sort((a, b) => b[1].total - a[1].total).forEach(([cat, val]) => {
+    summarySheet.addRow({ category: cat, total: val.total, count: val.count });
+  });
+  summarySheet.getColumn('total').numFmt = '"$"#,##0.00';
+
+  const buf = await workbook.xlsx.writeBuffer();
+  return Buffer.from(buf);
+}
+
 export async function sendExpenseReport(userId: string, period?: string) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error('User not found');
@@ -152,12 +229,20 @@ export async function sendExpenseReport(userId: string, period?: string) {
   const periodLabel = period ? (periodLabels[period] || 'All Time') : 'All Time';
 
   const html = buildSummaryHtml(expenses, user, periodLabel);
+  const excelBuffer = await buildExcelBuffer(expenses, periodLabel);
+  const filename = `billie-expenses-${periodLabel.replace(/\s+/g, '-').toLowerCase()}.xlsx`;
 
   const { data, error } = await resend.emails.send({
     from: 'Billie <hello@billietracker.com>',
     to: user.email,
     subject: `Your Billie Expense Report · ${periodLabel}`,
     html,
+    attachments: [
+      {
+        filename,
+        content: excelBuffer,
+      },
+    ],
   });
 
   if (error) throw new Error(error.message);
