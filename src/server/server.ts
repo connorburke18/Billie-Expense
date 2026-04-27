@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/auth';
 import expenseRoutes from './routes/expenses';
 import twilioRoutes from './routes/twilio';
@@ -11,6 +12,7 @@ import reportsRoutes from './routes/reports';
 
 dotenv.config();
 
+const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -37,7 +39,11 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/client', 'index.html'));
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📱 Twilio webhook: http://localhost:${PORT}/api/twilio/webhook`);
+  try {
+    const deleted = await (prisma as any).pendingExpense.deleteMany({});
+    if (deleted.count > 0) console.log(`🧹 Cleared ${deleted.count} stale pending expense(s)`);
+  } catch {}
 });
