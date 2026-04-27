@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
@@ -9,6 +9,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const justReset = searchParams.get('reset') === '1';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +52,11 @@ export default function Login() {
           <p className="text-[#888] text-sm mb-8">Sign in to your account</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {justReset && (
+              <div className="border border-green-200 bg-green-50 text-green-700 px-4 py-3 text-sm">
+                Password reset successfully. Sign in with your new password.
+              </div>
+            )}
             {error && (
               <div className="border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">
                 {error}
@@ -93,6 +100,11 @@ export default function Login() {
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
+            <div className="text-right">
+              <Link to="/forgot-password" className="text-xs text-[#888] hover:text-[#0a0a0a] transition-colors">
+                Forgot password?
+              </Link>
+            </div>
           </form>
 
           <p className="mt-6 text-center text-sm text-[#888]">

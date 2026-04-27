@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard';
 import Landing from './pages/Landing';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -67,6 +69,8 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </BrowserRouter>

@@ -14,10 +14,12 @@ model User {
   phoneNumber   String?   @unique
   firstName     String?
   lastName      String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  expenses      Expense[]
-  categories    Category[]
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  expenses           Expense[]
+  categories         Category[]
+  resetToken         String?
+  resetTokenExpiry   DateTime?
 }
 
 model Expense {
