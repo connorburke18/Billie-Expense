@@ -141,6 +141,24 @@ router.get('/me', async (req, res) => {
   }
 });
 
+router.post('/admin/set-plan', async (req, res) => {
+  const { secret, email, plan, seats } = req.body;
+  if (!secret || secret !== process.env.ADMIN_SECRET) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    await prisma.user.update({
+      where: { email },
+      data: { plan, seats: seats || user.seats },
+    });
+    res.json({ success: true, email, plan });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update plan' });
+  }
+});
+
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;

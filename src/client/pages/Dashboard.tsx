@@ -326,8 +326,8 @@ function StatsOverview() {
   );
 }
 
-const PLAN_LIMITS: Record<string, number> = { free: 5, solo: 100, pro: 500, business: 500 };
-const PLAN_LABELS: Record<string, string> = { free: 'Free', solo: 'Solo', pro: 'Pro', business: 'Business' };
+const PLAN_LIMITS: Record<string, number> = { free: 5, solo: 100, pro: 500, business: 500, founder: Infinity };
+const PLAN_LABELS: Record<string, string> = { free: 'Free', solo: 'Solo', pro: 'Pro', business: 'Business', founder: 'Founder' };
 
 function PlanWidget() {
   const [info, setInfo] = useState<{ plan: string; expenseCount: number; seats: number } | null>(null);
@@ -344,20 +344,29 @@ function PlanWidget() {
   if (!info) return null;
 
   const limit = PLAN_LIMITS[info.plan] ?? 5;
-  const pct = Math.min(100, Math.round((info.expenseCount / limit) * 100));
+  const unlimited = limit === Infinity;
+  const pct = unlimited ? 0 : Math.min(100, Math.round((info.expenseCount / limit) * 100));
 
   return (
     <div className="px-3 py-3 mb-2 border border-gray-200">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#0a0a0a]">{PLAN_LABELS[info.plan]}</span>
-        <Link to="/pricing" className="text-xs text-[#888] hover:text-[#0a0a0a] transition-colors">
-          {info.plan === 'free' ? 'Upgrade' : 'Manage'}
-        </Link>
+        <span className="text-xs font-semibold uppercase tracking-wider text-[#0a0a0a]">{PLAN_LABELS[info.plan] ?? info.plan}</span>
+        {info.plan !== 'founder' && (
+          <Link to="/pricing" className="text-xs text-[#888] hover:text-[#0a0a0a] transition-colors">
+            {info.plan === 'free' ? 'Upgrade' : 'Manage'}
+          </Link>
+        )}
       </div>
-      <div className="w-full h-1 bg-gray-100 mb-1">
-        <div className="h-1 bg-[#0a0a0a] transition-all" style={{ width: `${pct}%` }} />
-      </div>
-      <p className="text-xs text-[#888]">{info.expenseCount} / {limit} expenses</p>
+      {unlimited ? (
+        <p className="text-xs text-[#888]">Unlimited expenses</p>
+      ) : (
+        <>
+          <div className="w-full h-1 bg-gray-100 mb-1">
+            <div className="h-1 bg-[#0a0a0a] transition-all" style={{ width: `${pct}%` }} />
+          </div>
+          <p className="text-xs text-[#888]">{info.expenseCount} / {limit} expenses</p>
+        </>
+      )}
     </div>
   );
 }
